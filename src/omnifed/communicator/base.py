@@ -14,12 +14,13 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, TypeVar
+from typing import Dict, TypeVar, Optional
 
 import torch
 import torch.nn as nn
 
 from ..utils import RequiredSetup
+from .compression import Compression
 
 # ======================================================================================
 
@@ -27,9 +28,16 @@ from ..utils import RequiredSetup
 class AggregationOp(str, Enum):
     """Distributed tensor reduction operations for federated learning aggregation."""
 
-    SUM = "SUM"  # Sum all tensors across ranks
-    MEAN = "MEAN"  # Average tensors across ranks
-    MAX = "MAX"  # Element-wise maximum across ranks
+    SUM = "SUM"  # Sum all tensors across clients
+    MEAN = "MEAN"  # Average tensors across clients
+    MAX = "MAX"  # Element-wise maximum across clients
+
+
+class AggregationMetric(str, Enum):
+    """What to aggregate: gradients or model parameters."""
+
+    GRADIENT = "gradients"  # aggregate the gradients across clients
+    PARAMETER = "parameters"  # aggregate the model parameters across clients
 
 
 class BaseCommunicator(RequiredSetup, ABC):
@@ -46,7 +54,14 @@ class BaseCommunicator(RequiredSetup, ABC):
 
     MsgT = TypeVar("MsgT", nn.Module, torch.Tensor, Dict[str, torch.Tensor])
 
-    def __init__(self, rank: int, world_size: int, master_addr: str, master_port: int):
+    def __init__(
+        self,
+        rank: int,
+        world_size: int,
+        master_addr: str,
+        master_port: int,
+        compressor: Optional[Compression] = None,
+    ):
         """
         Initialize communicator with core distributed parameters.
 
@@ -55,6 +70,8 @@ class BaseCommunicator(RequiredSetup, ABC):
             world_size: Total number of nodes in the distributed setup
             master_addr: Address of the master node (server)
             master_port: Port for communication with the master node
+            compressor: type of compression to use if not None; could be sparsification, quantization
+            or low-rank approximation (see src/communicator/compression)
         """
         super().__init__()
         self.rank = rank
@@ -85,6 +102,7 @@ class BaseCommunicator(RequiredSetup, ABC):
         self,
         msg: MsgT,
         reduction: AggregationOp,
+        reduction_type: Optional[AggregationMetric] = AggregationMetric.PARAMETER,
     ) -> MsgT:
         """
         Aggregate message across all ranks using specified reduction operation.
@@ -92,6 +110,7 @@ class BaseCommunicator(RequiredSetup, ABC):
         Args:
             msg: Model, tensor dict, or tensor to aggregate
             reduction: SUM, MEAN, or MAX reduction operation
+            reduction_type: whether to reduce gradients or model parameters. defaults to parameter aggregation
 
         Returns:
             Same message type with aggregated values

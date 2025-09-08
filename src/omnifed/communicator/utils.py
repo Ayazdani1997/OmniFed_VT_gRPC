@@ -13,12 +13,20 @@
 # limitations under the License.
 
 from typing import Any, Dict, Union
+import importlib
 
 import numpy as np
 import torch
 import torch.nn as nn
 
 from . import grpc_pb2
+
+
+def get_class_from_str(path: str):
+    module_name, class_name = path.rsplit(".", 1)  # split module vs class
+    module = importlib.import_module(module_name)  # import the module
+    cls = getattr(module, class_name)  # get class by name
+    return cls
 
 
 def tensordict_to_proto(

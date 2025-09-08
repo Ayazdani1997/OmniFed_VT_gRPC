@@ -28,6 +28,7 @@ from src.omnifed import Engine, EngineConfig, utils
 @hydra.main(version_base=None, config_path="conf", config_name="base")
 def main(cfg: EngineConfig) -> None:
     import logging
+    # os.environ["GLOO_SOCKET_IFNAME"] = "lo0"
 
     # utils.setup_rich_logging()
     # NOTE: migrate to logging soon (this is currently unused)

@@ -24,7 +24,7 @@ import torch.nn as nn
 class BaseHead(nn.Module, ABC):
     """
     Abstract base class for model heads (output layers).
-    
+
     Defines interface for final processing layers.
     Converts backbone features to task-specific outputs (classification, regression, etc.).
     """
@@ -39,7 +39,7 @@ class BaseHead(nn.Module, ABC):
 class BaseBackbone(nn.Module, ABC):
     """
     Abstract base class for feature extraction backbones.
-    
+
     Defines interface for feature extraction components that process raw inputs
     into meaningful representations for heads to consume.
     """
