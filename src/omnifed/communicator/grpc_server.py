@@ -24,6 +24,7 @@ from ..utils import print
 from . import grpc_pb2, grpc_pb2_grpc
 from .base import AggregationOp
 from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto
+from .compression.quantization import QSGDQuantCompression
 
 
 @rich.repr.auto
@@ -51,6 +52,7 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
         # Core configuration
         self.world_size = world_size
         self.registered_clients = set()
+        # self.compressor = QSGDQuantCompression()
         self.lock = threading.Lock()
 
         # Aggregation session management
@@ -123,18 +125,18 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 # Initialize aggregated tensors for each key
                 aggregated_tensors = {}
 
-                if reduction_type == AggregationOp.MAX.value:
-                    # MAX reduction: element-wise maximum
-                    for key, tensor in first_data.items():
-                        all_tensors = [
-                            client_data[key]
-                            for client_data in session_state["data"].values()
-                        ]
-                        aggregated_tensors[key] = torch.max(
-                            torch.stack(all_tensors), dim=0
-                        )[0]
+                # if reduction_type == AggregationOp.MAX.value:
+                #     # MAX reduction: element-wise maximum
+                #     for key, tensor in first_data.items():
+                #         all_tensors = [
+                #             client_data[key]
+                #             for client_data in session_state["data"].values()
+                #         ]
+                #         aggregated_tensors[key] = torch.max(
+                #             torch.stack(all_tensors), dim=0
+                #         )[0]
 
-                elif reduction_type in (
+                if reduction_type in (
                     AggregationOp.SUM.value,
                     AggregationOp.MEAN.value,
                 ):

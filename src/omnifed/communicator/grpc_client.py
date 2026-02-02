@@ -23,6 +23,68 @@ import torch
 from ..utils import print
 from . import AggregationOp, grpc_pb2, grpc_pb2_grpc
 from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto
+from .compression.sparsification import *
+from .compression.quantization import *
+from .compression.lowrank_approximation import *
+
+
+import torch
+import torch.nn as nn
+
+
+def extract_tensordict(msg, aggregation_metric):
+    """
+    Returns dict[str, Tensor] with stable keys.
+    """
+    if isinstance(msg, torch.Tensor):
+        return {"__tensor__": msg}
+
+    elif isinstance(msg, dict):
+        # assume dict[str, Tensor]
+        return msg
+
+    elif isinstance(msg, nn.Module):
+        tensordict = {}
+        for name, param in msg.named_parameters():
+            if aggregation_metric == "grad":
+                if param.grad is not None:
+                    tensordict[name] = param.grad
+            elif aggregation_metric == "param":
+                tensordict[name] = param.data
+            else:
+                raise ValueError(
+                    f"Unsupported aggregation_metric: {aggregation_metric}"
+                )
+        return tensordict
+
+    else:
+        raise TypeError("Unsupported msg type")
+
+
+def compress_message_tensors(msg, compressor, aggregation_metric):
+    """
+    Returns a compressed representation with 1-1 key correspondence.
+    """
+    compressed = {}
+
+    tensordict = extract_tensordict(msg, aggregation_metric)
+
+    with torch.no_grad():
+        for key, tensor in tensordict.items():
+            (values, indices), ctx = compressor.compress(
+                tensor=tensor,
+                name=key,
+            )
+
+            compressed[key] = {
+                "values": values,
+                "indices": indices,
+                "ctx": ctx,  # (numel, shape)
+            }
+
+    return compressed
+
+
 
 
 @rich.repr.auto
@@ -72,6 +134,7 @@ class GrpcClient:
         self.retry_delay = retry_delay
         self.max_retries = max_retries
         self.client_timeout = client_timeout
+        self.compressor = TopKCompression()
 
         # Initialize connection state
         self.channel = None
@@ -133,6 +196,7 @@ class GrpcClient:
                 request = grpc_pb2.ClientInfo(client_id=self.client_id)
                 response = self.stub.GetBroadcastState(request)
                 if response.is_ready:
+                    print(f"Retrieving response on the client side; client_id = {self.client_id}")
                     tensordict = proto_to_tensordict(response.tensor_dict)
                     print(f"Received {get_msg_info(tensordict)}")
                     return tensordict
@@ -162,7 +226,8 @@ class GrpcClient:
             reduction_type: SUM, MEAN, or MAX aggregation operation
         """
         try:
-            proto_tensordict = tensordict_to_proto(tensordict)
+            compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
+            proto_tensordict = tensordict_to_proto(compressed_tensordict)
             request = grpc_pb2.AggregationRequest(
                 client_id=self.client_id,
                 tensor_dict=proto_tensordict,

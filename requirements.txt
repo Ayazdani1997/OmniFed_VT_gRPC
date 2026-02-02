@@ -24,8 +24,8 @@ torchmetrics==1.8.2
 torchtext==0.18.0
 torchvision==0.21.0
 tqdm==4.67.1
-typeguard==4.4.4
-typing-extensions==4.12.2
+typeguard
+typing-extensions
 urllib3==2.3.0
 wcwidth==0.2.13
 wheel==0.37.0

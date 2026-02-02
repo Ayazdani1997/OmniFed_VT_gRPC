@@ -20,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from . import grpc_pb2
+from collections import defaultdict
 
 
 def get_class_from_str(path: str):
@@ -46,83 +47,213 @@ def tensordict_to_proto(
     """
     entries = []
 
-    for key, tensor in tensordict.items():
-        # Store original device before CPU conversion
-        original_device = str(tensor.device)
+    for key, item in tensordict.items():
 
-        # Convert to CPU for serialization (required for protobuf)
-        tensor_cpu = tensor.cpu()
+        # ----------------------------------------------------
+        # CASE 1: COMPRESSED ENTRY (Top-K)
+        # ----------------------------------------------------
+        if isinstance(item, dict) and "values" in item:
+            values  = item["values"]
+            indices = item["indices"]
+            numel, shape = item["ctx"]
 
-        # Serialize tensor data to bytes for transmission
-        tensor_bytes = tensor_cpu.numpy().tobytes()
+            original_device = str(values.device)
 
-        entry = grpc_pb2.TensorEntry(
-            key=key,
-            data=tensor_bytes,
-            shape=list(tensor_cpu.shape),
-            dtype=str(tensor_cpu.dtype),
-            device=original_device,
-            data_size=len(tensor_bytes),
-        )
+            values_cpu  = values.cpu()
+            indices_cpu = indices.cpu()
+
+            data_bytes = values_cpu.numpy().tobytes()
+            index_bytes = indices_cpu.numpy().tobytes()
+
+            compression_type = "TopKCompression"
+
+            entry = grpc_pb2.TensorEntry(
+                key=key,
+                data=data_bytes,                 # VALUES
+                shape=list(shape),               # ORIGINAL tensor shape
+                dtype=str(values_cpu.dtype),
+                device=original_device,
+                data_size=len(data_bytes),
+                compression_type=compression_type,
+                index=index_bytes,               # INDICES
+                idx_shape=list(indices_cpu.shape),  # usually [k]
+            )
+
+        # ----------------------------------------------------
+        # CASE 2: UNCOMPRESSED DENSE TENSOR
+        # ----------------------------------------------------
+        else:
+            tensor = item
+
+            original_device = str(tensor.device)
+            tensor_cpu = tensor.cpu()
+
+            data_bytes = tensor_cpu.numpy().tobytes()
+
+            entry = grpc_pb2.TensorEntry(
+                key=key,
+                data=data_bytes,
+                shape=list(tensor_cpu.shape),
+                dtype=str(tensor_cpu.dtype),
+                device=original_device,
+                data_size=len(data_bytes),
+                # index omitted → defaults to b""
+                # idx_shape omitted → defaults to []
+            )
+
+
         entries.append(entry)
+
 
     return grpc_pb2.TensorDict(entries=entries)
 
 
+
+from typing import Dict
+import numpy as np
+import torch
+
 def proto_to_tensordict(
-    proto_tensordict: grpc_pb2.TensorDict,
+    proto_tensordict,
 ) -> Dict[str, torch.Tensor]:
     """
-    Convert protobuf tensor dictionary back to PyTorch tensors.
-
-    Deserializes byte data back to PyTorch tensors with original shapes,
-    data types, and device placement preserved.
-
-    Args:
-        proto_tensordict: TensorDict protobuf message from gRPC
-
-    Returns:
-        Dictionary mapping parameter names to reconstructed tensors
-
-    Raises:
-        ValueError: If data size mismatch or unsupported dtype
+    Convert protobuf TensorDict back to PyTorch tensors.
+    Supports both uncompressed and Top-K compressed tensors.
     """
     tensordict = {}
+
+    dtype_mapping = {
+        "torch.float32": np.float32,
+        "torch.float64": np.float64,
+        "torch.int32": np.int32,
+        "torch.int64": np.int64,
+        "torch.bool": np.bool_,
+    }
+
     for entry in proto_tensordict.entries:
-        # Validate data size
-        if len(entry.data) != entry.data_size:
-            raise ValueError(
-                f"Data size mismatch for tensor {entry.key}: expected {entry.data_size}, got {len(entry.data)}"
-            )
-
-        # Dtype mapping: string -> numpy_dtype
-        dtype_mapping = {
-            "torch.float32": np.float32,
-            "torch.float64": np.float64,
-            "torch.int32": np.int32,
-            "torch.int64": np.int64,
-            "torch.bool": np.bool_,
-        }
-
+        # ----------------------------
+        # Validate dtype
+        # ----------------------------
         if entry.dtype not in dtype_mapping:
-            supported_dtypes = list(dtype_mapping.keys())
             raise ValueError(
-                f"Unsupported dtype: {entry.dtype}. Supported: {supported_dtypes}"
+                f"Unsupported dtype: {entry.dtype}. "
+                f"Supported: {list(dtype_mapping.keys())}"
             )
 
         numpy_dtype = dtype_mapping[entry.dtype]
 
-        # Reconstruct tensor from serialized bytes
-        numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
-        numpy_array = numpy_array.reshape(tuple(entry.shape))
+        # Normalize compression type (proto3 default is "")
+        compression_type = entry.compression_type or None
 
-        # Create tensor and restore to original device
-        # Note: .copy() needed because np.frombuffer creates read-only arrays
+        print(f"Compression = {compression_type}, type = {type(compression_type)}")
+
+        # ----------------------------
+        # CASE 1: Top-K compressed
+        # ----------------------------
+        if compression_type:
+            # Sanity checks
+            if not entry.index:
+                raise ValueError(
+                    f"Missing indices for compressed tensor {entry.key}"
+                )
+
+            # Decode values
+            values = np.frombuffer(entry.data, dtype=numpy_dtype)
+
+            # Decode indices
+            indices = np.frombuffer(entry.index, dtype=np.int32)
+            indices = indices.reshape(entry.idx_shape)
+
+            # Reconstruct dense tensor
+            numel = int(np.prod(entry.shape))
+            dense = np.zeros(numel, dtype=numpy_dtype)
+
+            dense[indices] = values
+            numpy_array = dense.reshape(tuple(entry.shape))
+
+        # ----------------------------
+        # CASE 2: Uncompressed (dense)
+        # ----------------------------
+        else:
+            # Validate data size (dense case only)
+            if len(entry.data) != entry.data_size:
+                raise ValueError(
+                    f"Data size mismatch for tensor {entry.key}: "
+                    f"expected {entry.data_size}, got {len(entry.data)}"
+                )
+
+            numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
+            numpy_array = numpy_array.reshape(tuple(entry.shape))
+
+        # else:
+        #     raise ValueError(
+        #         f"Unsupported compression type: {compression_type}"
+        #     )
+
+        # ----------------------------
+        # Convert to torch.Tensor
+        # ----------------------------
+        # .copy() because frombuffer gives a read-only view
         tensor = torch.from_numpy(numpy_array.copy()).to(entry.device)
-
         tensordict[entry.key] = tensor
 
     return tensordict
+
+
+# def proto_to_tensordict(
+#     proto_tensordict: grpc_pb2.TensorDict,
+# ) -> Dict[str, torch.Tensor]:
+#     """
+#     Convert protobuf tensor dictionary back to PyTorch tensors.
+
+#     Deserializes byte data back to PyTorch tensors with original shapes,
+#     data types, and device placement preserved.
+
+#     Args:
+#         proto_tensordict: TensorDict protobuf message from gRPC
+
+#     Returns:
+#         Dictionary mapping parameter names to reconstructed tensors
+
+#     Raises:
+#         ValueError: If data size mismatch or unsupported dtype
+#     """
+#     tensordict = {}
+#     for entry in proto_tensordict.entries:
+#         # Validate data size
+#         if len(entry.data) != entry.data_size:
+#             raise ValueError(
+#                 f"Data size mismatch for tensor {entry.key}: expected {entry.data_size}, got {len(entry.data)}"
+#             )
+
+#         # Dtype mapping: string -> numpy_dtype
+#         dtype_mapping = {
+#             "torch.float32": np.float32,
+#             "torch.float64": np.float64,
+#             "torch.int32": np.int32,
+#             "torch.int64": np.int64,
+#             "torch.bool": np.bool_,
+#         }
+
+#         if entry.dtype not in dtype_mapping:
+#             supported_dtypes = list(dtype_mapping.keys())
+#             raise ValueError(
+#                 f"Unsupported dtype: {entry.dtype}. Supported: {supported_dtypes}"
+#             )
+
+#         numpy_dtype = dtype_mapping[entry.dtype]
+
+#         # Reconstruct tensor from serialized bytes
+#         numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
+#         numpy_array = numpy_array.reshape(tuple(entry.shape))
+
+#         # Create tensor and restore to original device
+#         # Note: .copy() needed because np.frombuffer creates read-only arrays
+#         tensor = torch.from_numpy(numpy_array.copy()).to(entry.device)
+
+#         tensordict[entry.key] = tensor
+
+#     return tensordict
 
 
 def get_msg_info(

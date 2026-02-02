@@ -15,7 +15,7 @@ defaults:
 
 # ─────────────────────────────────── Centralized Topology Overrides
 topology:
-  num_clients: 3
+  num_clients: 2
   local_comm:
     _target_: src.omnifed.communicator.GrpcCommunicator
     # master_addr: 127.0.0.1 # Default
