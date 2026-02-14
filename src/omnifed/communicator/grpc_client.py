@@ -41,11 +41,29 @@ def extract_tensordict(msg, aggregation_metric):
 
     elif isinstance(msg, dict):
         # assume dict[str, Tensor]
-        return msg
+        tensordict = {}
+        print(msg)
+        for name, param in msg.items():
+            # print(f"name = {name} , param = {param}")
+            if aggregation_metric == "grad":
+                if param.grad is not None:
+                    tensordict[name] = param.grad
+                else:
+                    tensordict[name] = param.data
+            elif aggregation_metric == "param":
+                tensordict[name] = param.data
+            else:
+                raise ValueError(
+                    f"Unsupported aggregation_metric: {aggregation_metric}"
+                )
+        return tensordict
 
     elif isinstance(msg, nn.Module):
+        # assume dict[str, Tensor]
         tensordict = {}
+        print(msg)
         for name, param in msg.named_parameters():
+            # print(f"name = {name} , param = {param}")
             if aggregation_metric == "grad":
                 if param.grad is not None:
                     tensordict[name] = param.grad
@@ -67,15 +85,22 @@ def compress_message_tensors(msg, compressor, aggregation_metric):
     """
     compressed = {}
 
+    if isinstance(msg, torch.Tensor):
+        return msg
+
+    
+
     tensordict = extract_tensordict(msg, aggregation_metric)
 
     with torch.no_grad():
         for key, tensor in tensordict.items():
+            # print(f"key = {key}")
             (values, indices), ctx = compressor.compress(
                 tensor=tensor,
                 name=key,
             )
 
+            print(f"Inside compressor: key = {key}, values = {values}, value shape = {values.shape}, indices = {indices}, index shape = {indices.shape}")
             compressed[key] = {
                 "values": values,
                 "indices": indices,
@@ -226,8 +251,13 @@ class GrpcClient:
             reduction_type: SUM, MEAN, or MAX aggregation operation
         """
         try:
-            # compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
-            proto_tensordict = tensordict_to_proto(tensordict)
+            print(f"Dict to submit; type = {type(tensordict)}")
+            compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
+            compressor_name = self.compressor.__class__.__name__
+            if isinstance(tensordict, torch.Tensor) or isinstance(tensordict, dict):
+                compressor_name = None
+                compressed_tensordict = tensordict
+            proto_tensordict = tensordict_to_proto(compressed_tensordict, compressor_name)
             request = grpc_pb2.AggregationRequest(
                 client_id=self.client_id,
                 tensor_dict=proto_tensordict,

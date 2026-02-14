@@ -21,6 +21,7 @@ import torch.nn as nn
 
 from . import grpc_pb2
 from collections import defaultdict
+from .compression.sparsification import TopKCompression
 
 
 def get_class_from_str(path: str):
@@ -52,12 +53,14 @@ def tensordict_to_proto(
         # ----------------------------------------------------
         # CASE 1: COMPRESSED ENTRY (Top-K)
         # ----------------------------------------------------
-        if isinstance(item, dict) and compression_type:
+        if isinstance(item, dict) and compression_type == TopKCompression.__name__:
             values  = item["values"]
             indices = item["indices"]
             numel, shape = item["ctx"]
 
             original_device = str(values.device)
+
+            print(f"TopKCompression, client submitting indices = {indices}, shape = {indices.shape}")
 
             values_cpu  = values.cpu()
             indices_cpu = indices.cpu()
@@ -65,7 +68,13 @@ def tensordict_to_proto(
             data_bytes = values_cpu.numpy().tobytes()
             index_bytes = indices_cpu.numpy().tobytes()
 
-            compression_type = "TopKCompression"
+            print(f"TopKCompression, client submitting indices_cpu = {indices_cpu}, shape = {indices_cpu.shape}")
+            print(f"TopKCompression, client submitting index_bytes = {index_bytes}, shape = {indices_cpu.shape}")
+            print(f"TopKCompression, client submitting index_bytes = {index_bytes}, shape = {list(indices_cpu.shape)}")
+            print(f"TopKCompression, client submitting data = {values}")
+            print(f"TopKCompression, client submitting data_bytes = {data_bytes}")
+            print(f"TopKCompression, client submitting data_shape = {shape}")
+            compression_type = "TopKCompression" if len(indices_cpu) != 0 else None
 
             entry = grpc_pb2.TensorEntry(
                 key=key,
@@ -83,7 +92,10 @@ def tensordict_to_proto(
         # CASE 2: UNCOMPRESSED DENSE TENSOR
         # ----------------------------------------------------
         else:
+            print(f"Inside tensordict_to_proto: No compressor found, compressor = {compression_type}")
             tensor = item
+
+            # print(f"Tensor type = {type(tensor)}, tensor = {tensor}")
 
             original_device = str(tensor.device)
             tensor_cpu = tensor.cpu()
@@ -147,10 +159,11 @@ def proto_to_tensordict(
 
         print(f"Compression = {compression_type}, type = {type(compression_type)}")
 
+        print(f"TopKCompression.__class__.__name__ = {TopKCompression.__name__}")
         # ----------------------------
         # CASE 1: Top-K compressed
         # ----------------------------
-        if compression_type:
+        if compression_type == TopKCompression.__name__:
             # Sanity checks
             if not entry.index:
                 raise ValueError(
@@ -162,6 +175,8 @@ def proto_to_tensordict(
 
             # Decode indices
             indices = np.frombuffer(entry.index, dtype=np.int32)
+            print(f"TopKCompression; indices = {indices}, entry.idx_shape = {entry.idx_shape}")
+            print(f"TopKCompression; indices.shape = {indices.shape}, entry.idx_shape = {entry.idx_shape}")
             indices = indices.reshape(entry.idx_shape)
 
             # Reconstruct dense tensor
@@ -169,12 +184,13 @@ def proto_to_tensordict(
             dense = np.zeros(numel, dtype=numpy_dtype)
 
             dense[indices] = values
+            print(f"TopKCompression; dense.shape = {dense.shape}, entry.shape = {entry.shape}")
             numpy_array = dense.reshape(tuple(entry.shape))
 
         # ----------------------------
         # CASE 2: Uncompressed (dense)
         # ----------------------------
-        else:
+        elif compression_type is None:
             # Validate data size (dense case only)
             if len(entry.data) != entry.data_size:
                 raise ValueError(
@@ -183,12 +199,13 @@ def proto_to_tensordict(
                 )
 
             numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
+            print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
             numpy_array = numpy_array.reshape(tuple(entry.shape))
 
-        # else:
-        #     raise ValueError(
-        #         f"Unsupported compression type: {compression_type}"
-        #     )
+        else:
+            raise ValueError(
+                f"Unsupported compression type: {compression_type}, the type is {type(compression_type)}"
+            )
 
         # ----------------------------
         # Convert to torch.Tensor

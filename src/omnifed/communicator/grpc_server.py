@@ -136,7 +136,7 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                             torch.stack(all_tensors), dim=0
                         )[0]
 
-                if reduction_type in (
+                elif reduction_type in (
                     AggregationOp.SUM.value,
                     AggregationOp.MEAN.value,
                 ):
@@ -253,6 +253,7 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 return grpc_pb2.StatusResponse(success=True)
 
             except Exception as e:
+                # print(e)
                 warnings.warn(
                     f"Failed to process aggregation submission from client {client_id} | {e}",
                     RuntimeWarning,
