@@ -125,16 +125,16 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 # Initialize aggregated tensors for each key
                 aggregated_tensors = {}
 
-                # if reduction_type == AggregationOp.MAX.value:
-                #     # MAX reduction: element-wise maximum
-                #     for key, tensor in first_data.items():
-                #         all_tensors = [
-                #             client_data[key]
-                #             for client_data in session_state["data"].values()
-                #         ]
-                #         aggregated_tensors[key] = torch.max(
-                #             torch.stack(all_tensors), dim=0
-                #         )[0]
+                if reduction_type == AggregationOp.MAX.value:
+                    # MAX reduction: element-wise maximum
+                    for key, tensor in first_data.items():
+                        all_tensors = [
+                            client_data[key]
+                            for client_data in session_state["data"].values()
+                        ]
+                        aggregated_tensors[key] = torch.max(
+                            torch.stack(all_tensors), dim=0
+                        )[0]
 
                 if reduction_type in (
                     AggregationOp.SUM.value,

@@ -31,7 +31,7 @@ def get_class_from_str(path: str):
 
 
 def tensordict_to_proto(
-    tensordict: Dict[str, torch.Tensor],
+    tensordict: Dict[str, torch.Tensor], compression_type=None
 ) -> grpc_pb2.TensorDict:
     """
     Convert tensor dictionary to protobuf format for gRPC transmission.
@@ -52,7 +52,7 @@ def tensordict_to_proto(
         # ----------------------------------------------------
         # CASE 1: COMPRESSED ENTRY (Top-K)
         # ----------------------------------------------------
-        if isinstance(item, dict) and "values" in item:
+        if isinstance(item, dict) and compression_type:
             values  = item["values"]
             indices = item["indices"]
             numel, shape = item["ctx"]

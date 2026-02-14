@@ -226,8 +226,8 @@ class GrpcClient:
             reduction_type: SUM, MEAN, or MAX aggregation operation
         """
         try:
-            compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
-            proto_tensordict = tensordict_to_proto(compressed_tensordict)
+            # compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
+            proto_tensordict = tensordict_to_proto(tensordict)
             request = grpc_pb2.AggregationRequest(
                 client_id=self.client_id,
                 tensor_dict=proto_tensordict,
