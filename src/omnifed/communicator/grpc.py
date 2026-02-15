@@ -306,6 +306,8 @@ class GrpcCommunicator(BaseCommunicator):
                     if param.requires_grad and name in tensordict:
                         # Ensure tensor is on the same device as the parameter before copying
                         tensor = tensordict[name].to(param.device)
+                        # mask = tensor != 0
+                        # param.data[mask] = tensor[mask]
                         param.data.copy_(tensor)
                 # Apply buffers (batch norm stats, etc.) - only floating-point buffers
                 for name, buffer in msg.named_buffers():

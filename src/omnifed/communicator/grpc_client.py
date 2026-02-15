@@ -22,7 +22,7 @@ import torch
 
 from ..utils import print
 from . import AggregationOp, grpc_pb2, grpc_pb2_grpc
-from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto
+from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto, proto_to_tensordict_extended
 from .compression.sparsification import *
 from .compression.quantization import *
 from .compression.lowrank_approximation import *
@@ -307,13 +307,6 @@ class GrpcClient:
                 response = self.stub.GetAggregationResult(request)
                 if response.is_ready:
                     tensordict = proto_to_tensordict(response.tensor_dict)
-                    for key, t in tensordict.items():
-                        print(f"Checking for updates in get_agg_results; t = {t}")
-                        if torch.all(t == 0):
-                            print(f"get_agg_result; key = {key}")
-                            print(f"Zero updates; the tensordict[{key}] = {t} ; "
-                                f"self.last_tensordict_submitted[{key}] = {self.last_tensordict_submitted[key]}")
-                            tensordict[key] = self.last_tensordict_submitted[key]
                     print(
                         f"Received {get_msg_info(tensordict)} (waited {elapsed:.1f}s)"
                     )

@@ -52,10 +52,16 @@ def tensordict_to_proto(
 
     for key, item in tensordict.items():
 
+        indices_empty = True
+        try:
+            indices_empty = item["indices"].numel() == 0
+        except Exception as e:
+            indices_empty = True
+
         # ----------------------------------------------------
         # CASE 1: COMPRESSED ENTRY (Top-K)
         # ----------------------------------------------------
-        if isinstance(item, dict) and compression_type == TopKCompression.__name__:
+        if isinstance(item, dict) and compression_type == TopKCompression.__name__ and not indices_empty:
             values  = item["values"]
             indices = item["indices"]
             numel, shape = item["ctx"]
@@ -133,7 +139,6 @@ def proto_to_tensordict(
 ) -> Dict[str, torch.Tensor]:
     """
     Convert protobuf TensorDict back to PyTorch tensors.
-    Supports both uncompressed and Top-K compressed tensors.
     """
     tensordict = {}
 
@@ -157,6 +162,61 @@ def proto_to_tensordict(
 
         numpy_dtype = dtype_mapping[entry.dtype]
 
+        # Validate data size (dense case only)
+        if len(entry.data) != entry.data_size:
+            raise ValueError(
+                f"Data size mismatch for tensor {entry.key}: "
+                f"expected {entry.data_size}, got {len(entry.data)}"
+            )
+
+        numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
+        print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
+        numpy_array = numpy_array.reshape(tuple(entry.shape))
+
+
+        # ----------------------------
+        # Convert to torch.Tensor
+        # ----------------------------
+        # .copy() because frombuffer gives a read-only view
+        tensor = torch.from_numpy(numpy_array.copy()).to(entry.device)
+        tensordict[entry.key] = tensor
+
+    return tensordict
+
+def proto_to_tensordict_extended(
+    proto_tensordict,
+    server_model
+) -> Dict[str, torch.Tensor]:
+    """
+    Convert protobuf TensorDict back to PyTorch tensors.
+    Supports both uncompressed and Top-K compressed tensors.
+    """
+    tensordict = {}
+
+    is_model_communicated = False
+
+    print(f"Model is {server_model}")
+
+    dtype_mapping = {
+        "torch.float32": np.float32,
+        "torch.float64": np.float64,
+        "torch.int32": np.int32,
+        "torch.int64": np.int64,
+        "torch.bool": np.bool_,
+    }
+
+    for entry in proto_tensordict.entries:
+        # ----------------------------
+        # Validate dtype
+        # ----------------------------
+        if entry.dtype not in dtype_mapping:
+            raise ValueError(
+                f"Unsupported dtype: {entry.dtype}. "
+                f"Supported: {list(dtype_mapping.keys())}"
+            )
+
+        numpy_dtype = dtype_mapping[entry.dtype]
+        print(f"entry.key = {entry.key}")
         # Normalize compression type (proto3 default is "")
         compression_type = entry.compression_type or None
 
@@ -167,6 +227,7 @@ def proto_to_tensordict(
         # CASE 1: Top-K compressed
         # ----------------------------
         if compression_type == TopKCompression.__name__:
+            print(f"Data is compressed. Decompressing the data")
             # Sanity checks
             if not entry.index:
                 raise ValueError(
@@ -179,15 +240,45 @@ def proto_to_tensordict(
             # Decode indices
             indices = np.frombuffer(entry.index, dtype=np.int32)
             # indices = indices.reshape(entry.idx_shape)
-
-            if(indices.size == 0):
-                raise RuntimeError("proto_to_tensordict -> Index array is empty for TopKCompression")
-
-            # Reconstruct dense tensor
             numel = int(np.prod(entry.original_shape))
             dense = np.zeros(numel, dtype=numpy_dtype)
 
-            dense[indices] = values
+            print("indices.shape:", indices.shape)
+            print("values.shape:", values.shape)
+            print("len(indices):", len(indices))
+            print("len(values):", len(values))
+
+            if len(indices) != len(values):
+                raise RuntimeError(
+                    f"Mismatch: indices ({len(indices)}) != values ({len(values)})"
+                )
+
+
+
+            if(indices.size == 0):
+                raise RuntimeError("proto_to_tensordict -> Index array is empty for TopKCompression")
+            try:
+                # Reconstruct dense tensor
+                # Get server tensor
+                server_tensor = server_model[entry.key]
+
+
+                print(f"entry.key = {entry.key} is contained in the server_model")
+
+                # Move to CPU if needed and flatten
+                flat = server_tensor.detach().cpu().numpy().reshape(-1).copy()
+
+                # Overwrite only transmitted indices
+                flat[indices] = values
+
+                # Reshape back
+                dense = flat.reshape(entry.original_shape)
+                is_model_communicated = True
+                print(f"Compressed data communicated is the model itself")
+            except Exception as e:
+                print(f"Inside extended the error is {e}")
+                dense[indices] = values
+
             print(f"TopKCompression; dense.shape = {dense.shape}, entry.shape = {entry.shape}")
             numpy_array = dense.reshape(tuple(entry.original_shape))
 
@@ -218,7 +309,7 @@ def proto_to_tensordict(
         tensor = torch.from_numpy(numpy_array.copy()).to(entry.device)
         tensordict[entry.key] = tensor
 
-    return tensordict
+    return tensordict, is_model_communicated
 
 
 # def proto_to_tensordict(
