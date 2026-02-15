@@ -41,7 +41,9 @@ def tensordict_to_proto(
     Includes device information and data type preservation.
 
     Args:
-        tensordict: Dictionary mapping parameter names to tensor values
+        tensordict: Dictionary mapping parameter names to tensor values,
+        compression_type: The compression used
+
 
     Returns:
         TensorDict protobuf message ready for gRPC transmission
@@ -57,6 +59,7 @@ def tensordict_to_proto(
             values  = item["values"]
             indices = item["indices"]
             numel, shape = item["ctx"]
+            original_shape = item["original_shape"]
 
             original_device = str(values.device)
 
@@ -85,7 +88,7 @@ def tensordict_to_proto(
                 data_size=len(data_bytes),
                 compression_type=compression_type,
                 index=index_bytes,               # INDICES
-                idx_shape=list(indices_cpu.shape),  # usually [k]
+                original_shape=list(original_shape),  # usually [k]
             )
 
         # ----------------------------------------------------
@@ -175,17 +178,18 @@ def proto_to_tensordict(
 
             # Decode indices
             indices = np.frombuffer(entry.index, dtype=np.int32)
-            print(f"TopKCompression; indices = {indices}, entry.idx_shape = {entry.idx_shape}")
-            print(f"TopKCompression; indices.shape = {indices.shape}, entry.idx_shape = {entry.idx_shape}")
-            indices = indices.reshape(entry.idx_shape)
+            # indices = indices.reshape(entry.idx_shape)
+
+            if(indices.size == 0):
+                raise RuntimeError("proto_to_tensordict -> Index array is empty for TopKCompression")
 
             # Reconstruct dense tensor
-            numel = int(np.prod(entry.shape))
+            numel = int(np.prod(entry.original_shape))
             dense = np.zeros(numel, dtype=numpy_dtype)
 
             dense[indices] = values
             print(f"TopKCompression; dense.shape = {dense.shape}, entry.shape = {entry.shape}")
-            numpy_array = dense.reshape(tuple(entry.shape))
+            numpy_array = dense.reshape(tuple(entry.original_shape))
 
         # ----------------------------
         # CASE 2: Uncompressed (dense)

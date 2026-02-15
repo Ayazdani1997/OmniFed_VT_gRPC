@@ -74,5 +74,5 @@ message TensorEntry {
     int32 data_size = 6;         // Byte size for validation
     string compression_type = 7; // The compression algorithm
     bytes index = 8; // The index for compression
-    repeated int32 idx_shape = 9; // The index shape
+    repeated int32 original_shape = 9; // The index shape
 }

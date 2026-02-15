@@ -300,6 +300,7 @@ class GrpcCommunicator(BaseCommunicator):
         """
         if isinstance(msg, nn.Module):
             with torch.no_grad():
+                print("Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module")
                 # Apply parameters
                 for name, param in msg.named_parameters():
                     if param.requires_grad and name in tensordict:

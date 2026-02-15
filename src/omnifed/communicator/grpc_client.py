@@ -104,6 +104,7 @@ def compress_message_tensors(msg, compressor, aggregation_metric):
             compressed[key] = {
                 "values": values,
                 "indices": indices,
+                "original_shape": tensor.shape,
                 "ctx": ctx,  # (numel, shape)
             }
 
@@ -160,6 +161,7 @@ class GrpcClient:
         self.max_retries = max_retries
         self.client_timeout = client_timeout
         self.compressor = TopKCompression()
+        self.last_tensordict_submitted = None
 
         # Initialize connection state
         self.channel = None
@@ -223,6 +225,9 @@ class GrpcClient:
                 if response.is_ready:
                     print(f"Retrieving response on the client side; client_id = {self.client_id}")
                     tensordict = proto_to_tensordict(response.tensor_dict)
+                    with torch.no_grad():
+                        for key, tensor in tensordict.items():
+                            pass
                     print(f"Received {get_msg_info(tensordict)}")
                     return tensordict
                 poll_count += 1
@@ -254,9 +259,10 @@ class GrpcClient:
             print(f"Dict to submit; type = {type(tensordict)}")
             compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
             compressor_name = self.compressor.__class__.__name__
-            if isinstance(tensordict, torch.Tensor) or isinstance(tensordict, dict):
+            if isinstance(tensordict, torch.Tensor):
                 compressor_name = None
                 compressed_tensordict = tensordict
+            self.last_tensordict_submitted = tensordict
             proto_tensordict = tensordict_to_proto(compressed_tensordict, compressor_name)
             request = grpc_pb2.AggregationRequest(
                 client_id=self.client_id,
@@ -301,6 +307,13 @@ class GrpcClient:
                 response = self.stub.GetAggregationResult(request)
                 if response.is_ready:
                     tensordict = proto_to_tensordict(response.tensor_dict)
+                    for key, t in tensordict.items():
+                        print(f"Checking for updates in get_agg_results; t = {t}")
+                        if torch.all(t == 0):
+                            print(f"get_agg_result; key = {key}")
+                            print(f"Zero updates; the tensordict[{key}] = {t} ; "
+                                f"self.last_tensordict_submitted[{key}] = {self.last_tensordict_submitted[key]}")
+                            tensordict[key] = self.last_tensordict_submitted[key]
                     print(
                         f"Received {get_msg_info(tensordict)} (waited {elapsed:.1f}s)"
                     )
