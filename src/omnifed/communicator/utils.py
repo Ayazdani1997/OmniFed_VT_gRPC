@@ -70,6 +70,7 @@ def tensordict_to_proto(
             original_device = str(values.device)
 
             print(f"TopKCompression, client submitting indices = {indices}, shape = {indices.shape}")
+            print(f"TopKCompression, client submitting indices with type {type(indices)} and values with type {type(values)}")
 
             values_cpu  = values.cpu()
             indices_cpu = indices.cpu()
@@ -77,24 +78,27 @@ def tensordict_to_proto(
             data_bytes = values_cpu.numpy().tobytes()
             index_bytes = indices_cpu.numpy().tobytes()
 
-            print(f"TopKCompression, client submitting indices_cpu = {indices_cpu}, shape = {indices_cpu.shape}")
-            print(f"TopKCompression, client submitting index_bytes = {index_bytes}, shape = {indices_cpu.shape}")
-            print(f"TopKCompression, client submitting index_bytes = {index_bytes}, shape = {list(indices_cpu.shape)}")
-            print(f"TopKCompression, client submitting data = {values}")
-            print(f"TopKCompression, client submitting data_bytes = {data_bytes}")
-            print(f"TopKCompression, client submitting data_shape = {shape}")
+            print(f"tensordict_to_proto =>  TopKCompression, client submitting indices_cpu = {indices_cpu}, shape = {indices_cpu.shape}")
+            print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {indices_cpu.shape}")
+            print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {list(indices_cpu.shape)}")
+            print(f"tensordict_to_proto => TopKCompression, client submitting data = {values_cpu}")
+            print(f"tensordict_to_proto => TopKCompression, client submitting data_bytes = {data_bytes}")
+            print(f"tensordict_to_proto => TopKCompression, client submitting data_shape = {values_cpu.shape}")
             compression_type = "TopKCompression" if len(indices_cpu) != 0 else None
 
+            print(f"TopKCompression, index dtype is {indices_cpu.dtype}")
             entry = grpc_pb2.TensorEntry(
                 key=key,
                 data=data_bytes,                 # VALUES
-                shape=list(shape),               # ORIGINAL tensor shape
+                shape=list(values_cpu.shape),               # ORIGINAL tensor shape
                 dtype=str(values_cpu.dtype),
                 device=original_device,
                 data_size=len(data_bytes),
                 compression_type=compression_type,
                 index=index_bytes,               # INDICES
-                original_shape=list(original_shape),  # usually [k]
+                index_shape=list(indices_cpu.shape),  # usually [k]
+                index_dtype=str(indices_cpu.dtype),
+                original_shape=original_shape
             )
 
         # ----------------------------------------------------
@@ -234,21 +238,23 @@ def proto_to_tensordict_extended(
                     f"Missing indices for compressed tensor {entry.key}"
                 )
 
+            index_dtype = dtype_mapping[entry.index_dtype]
             # Decode values
             values = np.frombuffer(entry.data, dtype=numpy_dtype)
 
             # Decode indices
-            indices = np.frombuffer(entry.index, dtype=np.int32)
+            indices = np.frombuffer(entry.index, dtype=index_dtype)
             # indices = indices.reshape(entry.idx_shape)
             numel = int(np.prod(entry.original_shape))
             dense = np.zeros(numel, dtype=numpy_dtype)
 
-            print("indices.shape:", indices.shape)
-            print("values.shape:", values.shape)
-            print("len(indices):", len(indices))
-            print("len(values):", len(values))
+            print("proto_to_tensordict => indices.shape:", indices.shape)
+            print("proto_to_tensordict =>  values.shape:", values.shape)
+            print("proto_to_tensordict =>  indices:", indices)
+            print("proto_to_tensordict =>  values:", values)
 
             if len(indices) != len(values):
+                # print(f"Error: protodict_to_tensordict => {entry.dtype}")
                 raise RuntimeError(
                     f"Mismatch: indices ({len(indices)}) != values ({len(values)})"
                 )

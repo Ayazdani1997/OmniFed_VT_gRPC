@@ -56,8 +56,8 @@ class RayConfig:
 
     # Cluster connection (null = auto-detect local cluster)
     # Use "ray://host:port" for remote clusters, "local" to force local
+    # address: Optional[str] = "ray://localhost:8888"
     address: Optional[str] = None
-
     # Resource allocation - CRITICAL for proper GPU/CPU distribution
     # null = auto-detect based on hardware, explicit numbers override detection
     num_cpus: Optional[int] = None

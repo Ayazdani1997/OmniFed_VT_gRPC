@@ -16,6 +16,7 @@ import threading
 from collections import defaultdict
 from typing import Any, Dict
 import warnings
+import traceback
 
 import rich.repr
 import torch
@@ -156,13 +157,19 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 ):
                     # SUM/MEAN reduction: sum all contributions
                     for key, tensor in first_data.items():
-                        aggregated_tensors[key] = torch.zeros_like(tensor)
+                        aggregated_tensors[key] = torch.zeros_like(tensor).cpu()
 
                     # Sum all client contributions
                     for client_data in session_state["data"].values():
                         for key, tensor in client_data.items():
                             if key in aggregated_tensors:
-                                aggregated_tensors[key] += tensor
+                                # Ensure tensor is on CPU
+                                # tensor = tensor.to("cpu")
+
+                                # # Ensure same dtype as accumulator
+                                # tensor = tensor.to(aggregated_tensors[key].dtype)
+
+                                aggregated_tensors[key] += tensor.cpu()
 
                     # Convert sum to mean if needed
                     if reduction_type == AggregationOp.MEAN.value:
@@ -269,7 +276,8 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 return grpc_pb2.StatusResponse(success=True)
 
             except Exception as e:
-                print(f"error is {e}")
+                print(f"Error is: {e}")
+                traceback.print_exc()
                 warnings.warn(
                     f"Failed to process aggregation submission from client {client_id} | {e}",
                     RuntimeWarning,
