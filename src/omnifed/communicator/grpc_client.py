@@ -42,7 +42,7 @@ def extract_tensordict(msg, aggregation_metric):
     elif isinstance(msg, dict):
         # assume dict[str, Tensor]
         tensordict = {}
-        print(msg)
+        # print(msg)
         for name, param in msg.items():
             # print(f"name = {name} , param = {param}")
             if aggregation_metric == "grad":
@@ -100,7 +100,7 @@ def compress_message_tensors(msg, compressor, aggregation_metric):
                 name=key,
             )
 
-            print(f"Inside compressor: key = {key}, values = {values}, value shape = {values.shape}, indices = {indices}, index shape = {indices.shape}")
+            # print(f"Inside compressor: key = {key}, values = {values}, value shape = {values.shape}, indices = {indices}, index shape = {indices.shape}")
             compressed[key] = {
                 "values": values,
                 "indices": indices,
@@ -256,7 +256,7 @@ class GrpcClient:
             reduction_type: SUM, MEAN, or MAX aggregation operation
         """
         try:
-            print(f"Dict to submit; type = {type(tensordict)}")
+            # print(f"Dict to submit; type = {type(tensordict)}")
             compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
             compressor_name = self.compressor.__class__.__name__
             if isinstance(tensordict, torch.Tensor):

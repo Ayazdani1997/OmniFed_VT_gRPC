@@ -69,8 +69,8 @@ def tensordict_to_proto(
 
             original_device = str(values.device)
 
-            print(f"TopKCompression, client submitting indices = {indices}, shape = {indices.shape}")
-            print(f"TopKCompression, client submitting indices with type {type(indices)} and values with type {type(values)}")
+            # print(f"TopKCompression, client submitting indices = {indices}, shape = {indices.shape}")
+            # print(f"TopKCompression, client submitting indices with type {type(indices)} and values with type {type(values)}")
 
             values_cpu  = values.cpu()
             indices_cpu = indices.cpu()
@@ -78,15 +78,15 @@ def tensordict_to_proto(
             data_bytes = values_cpu.numpy().tobytes()
             index_bytes = indices_cpu.numpy().tobytes()
 
-            print(f"tensordict_to_proto =>  TopKCompression, client submitting indices_cpu = {indices_cpu}, shape = {indices_cpu.shape}")
-            print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {indices_cpu.shape}")
-            print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {list(indices_cpu.shape)}")
-            print(f"tensordict_to_proto => TopKCompression, client submitting data = {values_cpu}")
-            print(f"tensordict_to_proto => TopKCompression, client submitting data_bytes = {data_bytes}")
-            print(f"tensordict_to_proto => TopKCompression, client submitting data_shape = {values_cpu.shape}")
+            # print(f"tensordict_to_proto =>  TopKCompression, client submitting indices_cpu = {indices_cpu}, shape = {indices_cpu.shape}")
+            # print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {indices_cpu.shape}")
+            # print(f"tensordict_to_proto => TopKCompression, client submitting index_bytes = {index_bytes}, shape = {list(indices_cpu.shape)}")
+            # print(f"tensordict_to_proto => TopKCompression, client submitting data = {values_cpu}")
+            # print(f"tensordict_to_proto => TopKCompression, client submitting data_bytes = {data_bytes}")
+            # print(f"tensordict_to_proto => TopKCompression, client submitting data_shape = {values_cpu.shape}")
             compression_type = "TopKCompression" if len(indices_cpu) != 0 else None
 
-            print(f"TopKCompression, index dtype is {indices_cpu.dtype}")
+            # print(f"TopKCompression, index dtype is {indices_cpu.dtype}")
             entry = grpc_pb2.TensorEntry(
                 key=key,
                 data=data_bytes,                 # VALUES
@@ -105,7 +105,7 @@ def tensordict_to_proto(
         # CASE 2: UNCOMPRESSED DENSE TENSOR
         # ----------------------------------------------------
         else:
-            print(f"Inside tensordict_to_proto: No compressor found, compressor = {compression_type}")
+            # print(f"Inside tensordict_to_proto: No compressor found, compressor = {compression_type}")
             tensor = item
 
             # print(f"Tensor type = {type(tensor)}, tensor = {tensor}")
@@ -174,7 +174,7 @@ def proto_to_tensordict(
             )
 
         numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
-        print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
+        # print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
         numpy_array = numpy_array.reshape(tuple(entry.shape))
 
 
@@ -199,7 +199,7 @@ def proto_to_tensordict_extended(
 
     is_model_communicated = False
 
-    print(f"Model is {server_model}")
+    # print(f"Model is {server_model}")
 
     dtype_mapping = {
         "torch.float32": np.float32,
@@ -220,18 +220,18 @@ def proto_to_tensordict_extended(
             )
 
         numpy_dtype = dtype_mapping[entry.dtype]
-        print(f"entry.key = {entry.key}")
+        # print(f"entry.key = {entry.key}")
         # Normalize compression type (proto3 default is "")
         compression_type = entry.compression_type or None
 
-        print(f"Compression = {compression_type}, type = {type(compression_type)}")
+        # print(f"Compression = {compression_type}, type = {type(compression_type)}")
 
-        print(f"TopKCompression.__class__.__name__ = {TopKCompression.__name__}")
+        # print(f"TopKCompression.__class__.__name__ = {TopKCompression.__name__}")
         # ----------------------------
         # CASE 1: Top-K compressed
         # ----------------------------
         if compression_type == TopKCompression.__name__:
-            print(f"Data is compressed. Decompressing the data")
+            # print(f"Data is compressed. Decompressing the data")
             # Sanity checks
             if not entry.index:
                 raise ValueError(
@@ -248,10 +248,10 @@ def proto_to_tensordict_extended(
             numel = int(np.prod(entry.original_shape))
             dense = np.zeros(numel, dtype=numpy_dtype)
 
-            print("proto_to_tensordict => indices.shape:", indices.shape)
-            print("proto_to_tensordict =>  values.shape:", values.shape)
-            print("proto_to_tensordict =>  indices:", indices)
-            print("proto_to_tensordict =>  values:", values)
+            # print("proto_to_tensordict => indices.shape:", indices.shape)
+            # print("proto_to_tensordict =>  values.shape:", values.shape)
+            # print("proto_to_tensordict =>  indices:", indices)
+            # print("proto_to_tensordict =>  values:", values)
 
             if len(indices) != len(values):
                 # print(f"Error: protodict_to_tensordict => {entry.dtype}")
@@ -269,7 +269,7 @@ def proto_to_tensordict_extended(
                 server_tensor = server_model[entry.key]
 
 
-                print(f"entry.key = {entry.key} is contained in the server_model")
+                # print(f"entry.key = {entry.key} is contained in the server_model")
 
                 # Move to CPU if needed and flatten
                 flat = server_tensor.detach().cpu().numpy().reshape(-1).copy()
@@ -280,12 +280,12 @@ def proto_to_tensordict_extended(
                 # Reshape back
                 dense = flat.reshape(entry.original_shape)
                 is_model_communicated = True
-                print(f"Compressed data communicated is the model itself")
+                # print(f"Compressed data communicated is the model itself")
             except Exception as e:
-                print(f"Inside extended the error is {e}")
+                # print(f"Inside extended the error is {e}")
                 dense[indices] = values
 
-            print(f"TopKCompression; dense.shape = {dense.shape}, entry.shape = {entry.shape}")
+            # print(f"TopKCompression; dense.shape = {dense.shape}, entry.shape = {entry.shape}")
             numpy_array = dense.reshape(tuple(entry.original_shape))
 
         # ----------------------------

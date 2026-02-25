@@ -248,14 +248,14 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
         with self.lock:
             client_id = request.client_id
             current_session = self.current_aggregation_session
-            print(
-                f"Client {client_id} submitting {len(request.tensor_dict.entries)} tensors"
-            )
+            # print(
+            #     f"Client {client_id} submitting {len(request.tensor_dict.entries)} tensors"
+            # )
 
             try:
                 # Deserialize tensors (will be on CPU for consistent aggregation)
                 data, is_model_communicated = proto_to_tensordict_extended(request.tensor_dict, self.model)
-                print(f"Now the data is ready: data = {data}")
+                # print(f"Now the data is ready: data = {data}")
                 session_state = self.aggregation_state[current_session]
 
                 if session_state["reduction_type"] is None:
