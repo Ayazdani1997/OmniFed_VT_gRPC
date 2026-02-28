@@ -1,0 +1,1478 @@
+###########################################################################
+###########################################################################
+
++ export OMNIFED_DEBUG=1
++ OMNIFED_DEBUG=1
++ export PYTHONUNBUFFERED=1
++ PYTHONUNBUFFERED=1
++ export HYDRA_FULL_ERROR=1
++ HYDRA_FULL_ERROR=1
++ export RAY_DEDUP_LOGS=0
++ RAY_DEDUP_LOGS=0
++ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ./src/omnifed/communicator/grpc.proto
++ python -u main.py --config-name test_fedavg_centralized_grpc.yaml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ main ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ OmniFed ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Current working directory : /home/ahmadhossein/OmniFed_VT
+Orig working directory    : /home/ahmadhossein/OmniFed_VT
+Configuration:
+{
+│   'topology': {
+│   │   '_target_': 'src.omnifed.topology.CentralizedTopology',
+│   │   'num_clients': 3,
+│   │   'local_comm': {
+│   │   │   '_target_': 'src.omnifed.communicator.GrpcCommunicator',
+│   │   │   'master_port': 50051
+│   │   },
+│   │   'overrides': {
+│   │   │   0: {
+│   │   │   │   'datamodule': {
+│   │   │   │   │   'train': None
+│   │   │   │   }
+│   │   │   }
+│   │   }
+│   },
+│   'algorithm': {
+│   │   'schedules': {
+│   │   │   'aggregation': {
+│   │   │   │   '_target_': 'src.omnifed.algorithm.AggregationTriggers',
+│   │   │   │   'round_end': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': True,
+│   │   │   │   │   'every': 1
+│   │   │   │   },
+│   │   │   │   'epoch_end': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': False
+│   │   │   │   },
+│   │   │   │   'batch_end': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': False
+│   │   │   │   }
+│   │   │   },
+│   │   │   'evaluation': {
+│   │   │   │   '_target_': 'src.omnifed.algorithm.EvaluationTriggers',
+│   │   │   │   'experiment_start': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': True
+│   │   │   │   },
+│   │   │   │   'experiment_end': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': True
+│   │   │   │   },
+│   │   │   │   'pre_aggregation': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': False
+│   │   │   │   },
+│   │   │   │   'post_aggregation': {
+│   │   │   │   │   '_target_': 'src.omnifed.algorithm._schedules.Trigger',
+│   │   │   │   │   'enabled': True
+│   │   │   │   }
+│   │   │   },
+│   │   │   '_target_': 'src.omnifed.algorithm.ExecutionSchedules'
+│   │   },
+│   │   '_target_': 'src.omnifed.algorithm.FedAvg',
+│   │   'local_lr': 0.005,
+│   │   'max_epochs_per_round': 3
+│   },
+│   'model': {
+│   │   '_target_': 'src.omnifed.model.ComposableModel',
+│   │   'backbone': {
+│   │   │   '_target_': 'src.omnifed.model.SimpleCNNBackbone',
+│   │   │   'in_channels': 1,
+│   │   │   'hidden_channels': [
+│   │   │   │   32,
+│   │   │   │   64
+│   │   │   ],
+│   │   │   'out_channels': 128,
+│   │   │   'kernel_sizes': 3,
+│   │   │   'paddings': 1
+│   │   },
+│   │   'head': {
+│   │   │   '_target_': 'src.omnifed.model.ClassificationHead',
+│   │   │   'in_channels': 128,
+│   │   │   'num_classes': 10
+│   │   }
+│   },
+│   'datamodule': {
+│   │   'train': {
+│   │   │   '_target_': 'torch.utils.data.DataLoader',
+│   │   │   'dataset': {
+│   │   │   │   '_target_': 'torchvision.datasets.MNIST',
+│   │   │   │   'root': '/tmp/torchvision-mnist',
+│   │   │   │   'train': True,
+│   │   │   │   'download': True,
+│   │   │   │   'transform': {
+│   │   │   │   │   '_target_': 'torchvision.transforms.Compose',
+│   │   │   │   │   'transforms': [
+│   │   │   │   │   │   {
+│   │   │   │   │   │   │   '_target_': 'torchvision.transforms.ToTensor'
+│   │   │   │   │   │   },
+│   │   │   │   │   │   {
+│   │   │   │   │   │   │   '_target_': 'torchvision.transforms.Normalize',
+│   │   │   │   │   │   │   'mean': [
+│   │   │   │   │   │   │   │   0.1307
+│   │   │   │   │   │   │   ],
+│   │   │   │   │   │   │   'std': [
+│   │   │   │   │   │   │   │   0.3081
+│   │   │   │   │   │   │   ]
+│   │   │   │   │   │   }
+│   │   │   │   │   ]
+│   │   │   │   }
+│   │   │   },
+│   │   │   'batch_size': 128,
+│   │   │   'shuffle': True,
+│   │   │   'num_workers': 2,
+│   │   │   'pin_memory': True,
+│   │   │   'persistent_workers': True
+│   │   },
+│   │   'eval': {
+│   │   │   '_target_': 'torch.utils.data.DataLoader',
+│   │   │   'dataset': {
+│   │   │   │   '_target_': 'torchvision.datasets.MNIST',
+│   │   │   │   'root': '/tmp/torchvision-mnist',
+│   │   │   │   'train': False,
+│   │   │   │   'download': True,
+│   │   │   │   'transform': {
+│   │   │   │   │   '_target_': 'torchvision.transforms.Compose',
+│   │   │   │   │   'transforms': [
+│   │   │   │   │   │   {
+│   │   │   │   │   │   │   '_target_': 'torchvision.transforms.ToTensor'
+│   │   │   │   │   │   },
+│   │   │   │   │   │   {
+│   │   │   │   │   │   │   '_target_': 'torchvision.transforms.Normalize',
+│   │   │   │   │   │   │   'mean': [
+│   │   │   │   │   │   │   │   0.1307
+│   │   │   │   │   │   │   ],
+│   │   │   │   │   │   │   'std': [
+│   │   │   │   │   │   │   │   0.3081
+│   │   │   │   │   │   │   ]
+│   │   │   │   │   │   }
+│   │   │   │   │   ]
+│   │   │   │   }
+│   │   │   },
+│   │   │   'batch_size': 128,
+│   │   │   'shuffle': False,
+│   │   │   'num_workers': 2,
+│   │   │   'pin_memory': True,
+│   │   │   'persistent_workers': True
+│   │   },
+│   │   '_target_': 'src.omnifed.data.DataModule'
+│   },
+│   'global_rounds': 2,
+│   'overwrite': False,
+│   'ray': {
+│   │   'address': 'local',
+│   │   'num_cpus': None,
+│   │   'num_gpus': None,
+│   │   'resources': {},
+│   │   'object_store_memory': None,
+│   │   'log_to_driver': True,
+│   │   'include_dashboard': None,
+│   │   'dashboard_host': '127.0.0.1',
+│   │   'dashboard_port': None,
+│   │   'ignore_reinit_error': True,
+│   │   'namespace': None,
+│   │   'runtime_env': {}
+│   }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->__init__ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ CentralizedTopology->__init__ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[CentralizedTopology->__init__]
+CentralizedTopology(
+    3,
+    {'_target_': 'src.omnifed.communicator.GrpcCommunicator', 'master_port': 50051},
+    overrides={0: {'datamodule': {'train': None}}}
+)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->_setup ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Engine->_setup_output_directories] Created engine directory: 
+/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml/engine
+2026-02-25 06:23:55,433	INFO worker.py:1927 -- Started a local Ray instance.
+[Engine->_setup] ray.available_resources()
+{
+│   'node:__internal_head__': 1.0,
+│   'node:192.168.0.40': 1.0,
+│   'CPU': 64.0,
+│   'object_store_memory': 58850399846.0,
+│   'accelerator_type:A40': 1.0,
+│   'memory': 137317599642.0,
+│   'GPU': 1.0
+}
+[Engine->_setup] ray.nodes()
+[
+│   {
+│   │   'NodeID': '33dec2a056764e66d81397a304bdbae588bdca206a8285b6f6790a28',
+│   │   'Alive': True,
+│   │   'NodeManagerAddress': '192.168.0.40',
+│   │   'NodeManagerHostname': 'wukong0',
+│   │   'NodeManagerPort': 40539,
+│   │   'ObjectManagerPort': 46111,
+│   │   'ObjectStoreSocketName': '/tmp/ray/session_2026-02-25_06-23-54_628763_1014561/sockets/plasma_store',
+│   │   'RayletSocketName': '/tmp/ray/session_2026-02-25_06-23-54_628763_1014561/sockets/raylet',
+│   │   'MetricsExportPort': 55911,
+│   │   'NodeName': '192.168.0.40',
+│   │   'RuntimeEnvAgentPort': 60068,
+│   │   'DeathReason': 0,
+│   │   'DeathReasonMessage': '',
+│   │   'alive': True,
+│   │   'Resources': {
+│   │   │   'memory': 137317599642.0,
+│   │   │   'CPU': 64.0,
+│   │   │   'node:__internal_head__': 1.0,
+│   │   │   'object_store_memory': 58850399846.0,
+│   │   │   'node:192.168.0.40': 1.0,
+│   │   │   'GPU': 1.0,
+│   │   │   'accelerator_type:A40': 1.0
+│   │   },
+│   │   'Labels': {'ray.io/node_id': '33dec2a056764e66d81397a304bdbae588bdca206a8285b6f6790a28'}
+│   }
+]
+[Engine->_setup] Saved Ray resources info to: 
+/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml/engine/ray_available_resources.json
+[Engine->_setup] Saved Ray nodes info to: 
+/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml/engine/ray_nodes.json
+[Engine->_setup] Available GPUs: 1.0
+[Engine->_setup] Launching 4 Ray Actors
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->_init_ray_actors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{'name': 'Node0.0', 'local_comm': {'_target_': 'src.omnifed.communicator.GrpcCommunicator', 'master_port': 50051, 'rank': 0, 'world_size': 4}, 'global_comm': None, 'algorithm': {'schedules': {'aggregation': {'_target_': 'src.omnifed.algorithm.AggregationTriggers', 'round_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True, 'every': 1}, 'epoch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'batch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}}, 'evaluation': {'_target_': 'src.omnifed.algorithm.EvaluationTriggers', 'experiment_start': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'experiment_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'pre_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'post_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}}, '_target_': 'src.omnifed.algorithm.ExecutionSchedules'}, '_target_': 'src.omnifed.algorithm.FedAvg', 'local_lr': 0.005, 'max_epochs_per_round': 3}, 'model': {'_target_': 'src.omnifed.model.ComposableModel', 'backbone': {'_target_': 'src.omnifed.model.SimpleCNNBackbone', 'in_channels': 1, 'hidden_channels': [32, 64], 'out_channels': 128, 'kernel_sizes': 3, 'paddings': 1}, 'head': {'_target_': 'src.omnifed.model.ClassificationHead', 'in_channels': 128, 'num_classes': 10}}, 'datamodule': {'train': None, 'eval': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': False, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': False, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, '_target_': 'src.omnifed.data.DataModule'}, 'ray_actor_options': {'num_cpus': None, 'num_gpus': 0.25, 'resources': None, 'label_selector': None, 'accelerator_type': None, 'memory': None, 'max_restarts': 0, 'max_task_retries': 0, 'namespace': None, 'runtime_env': None, 'scheduling_strategy': None}, 'device_hint': 'auto', 'log_dir_base': '/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->_init_ray_actors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{'name': 'Node0.1', 'local_comm': {'_target_': 'src.omnifed.communicator.GrpcCommunicator', 'master_port': 50051, 'rank': 1, 'world_size': 4}, 'global_comm': None, 'algorithm': {'schedules': {'aggregation': {'_target_': 'src.omnifed.algorithm.AggregationTriggers', 'round_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True, 'every': 1}, 'epoch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'batch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}}, 'evaluation': {'_target_': 'src.omnifed.algorithm.EvaluationTriggers', 'experiment_start': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'experiment_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'pre_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'post_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}}, '_target_': 'src.omnifed.algorithm.ExecutionSchedules'}, '_target_': 'src.omnifed.algorithm.FedAvg', 'local_lr': 0.005, 'max_epochs_per_round': 3}, 'model': {'_target_': 'src.omnifed.model.ComposableModel', 'backbone': {'_target_': 'src.omnifed.model.SimpleCNNBackbone', 'in_channels': 1, 'hidden_channels': [32, 64], 'out_channels': 128, 'kernel_sizes': 3, 'paddings': 1}, 'head': {'_target_': 'src.omnifed.model.ClassificationHead', 'in_channels': 128, 'num_classes': 10}}, 'datamodule': {'train': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': True, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': True, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, 'eval': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': False, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': False, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, '_target_': 'src.omnifed.data.DataModule'}, 'ray_actor_options': {'num_cpus': None, 'num_gpus': 0.25, 'resources': None, 'label_selector': None, 'accelerator_type': None, 'memory': None, 'max_restarts': 0, 'max_task_retries': 0, 'namespace': None, 'runtime_env': None, 'scheduling_strategy': None}, 'device_hint': 'auto', 'log_dir_base': '/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->_init_ray_actors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{'name': 'Node0.2', 'local_comm': {'_target_': 'src.omnifed.communicator.GrpcCommunicator', 'master_port': 50051, 'rank': 2, 'world_size': 4}, 'global_comm': None, 'algorithm': {'schedules': {'aggregation': {'_target_': 'src.omnifed.algorithm.AggregationTriggers', 'round_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True, 'every': 1}, 'epoch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'batch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}}, 'evaluation': {'_target_': 'src.omnifed.algorithm.EvaluationTriggers', 'experiment_start': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'experiment_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'pre_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'post_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}}, '_target_': 'src.omnifed.algorithm.ExecutionSchedules'}, '_target_': 'src.omnifed.algorithm.FedAvg', 'local_lr': 0.005, 'max_epochs_per_round': 3}, 'model': {'_target_': 'src.omnifed.model.ComposableModel', 'backbone': {'_target_': 'src.omnifed.model.SimpleCNNBackbone', 'in_channels': 1, 'hidden_channels': [32, 64], 'out_channels': 128, 'kernel_sizes': 3, 'paddings': 1}, 'head': {'_target_': 'src.omnifed.model.ClassificationHead', 'in_channels': 128, 'num_classes': 10}}, 'datamodule': {'train': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': True, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': True, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, 'eval': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': False, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': False, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, '_target_': 'src.omnifed.data.DataModule'}, 'ray_actor_options': {'num_cpus': None, 'num_gpus': 0.25, 'resources': None, 'label_selector': None, 'accelerator_type': None, 'memory': None, 'max_restarts': 0, 'max_task_retries': 0, 'namespace': None, 'runtime_env': None, 'scheduling_strategy': None}, 'device_hint': 'auto', 'log_dir_base': '/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->_init_ray_actors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{'name': 'Node0.3', 'local_comm': {'_target_': 'src.omnifed.communicator.GrpcCommunicator', 'master_port': 50051, 'rank': 3, 'world_size': 4}, 'global_comm': None, 'algorithm': {'schedules': {'aggregation': {'_target_': 'src.omnifed.algorithm.AggregationTriggers', 'round_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True, 'every': 1}, 'epoch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'batch_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}}, 'evaluation': {'_target_': 'src.omnifed.algorithm.EvaluationTriggers', 'experiment_start': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'experiment_end': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}, 'pre_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': False}, 'post_aggregation': {'_target_': 'src.omnifed.algorithm._schedules.Trigger', 'enabled': True}}, '_target_': 'src.omnifed.algorithm.ExecutionSchedules'}, '_target_': 'src.omnifed.algorithm.FedAvg', 'local_lr': 0.005, 'max_epochs_per_round': 3}, 'model': {'_target_': 'src.omnifed.model.ComposableModel', 'backbone': {'_target_': 'src.omnifed.model.SimpleCNNBackbone', 'in_channels': 1, 'hidden_channels': [32, 64], 'out_channels': 128, 'kernel_sizes': 3, 'paddings': 1}, 'head': {'_target_': 'src.omnifed.model.ClassificationHead', 'in_channels': 128, 'num_classes': 10}}, 'datamodule': {'train': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': True, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': True, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, 'eval': {'_target_': 'torch.utils.data.DataLoader', 'dataset': {'_target_': 'torchvision.datasets.MNIST', 'root': '${oc.env:OMNIFED_DATA_DIR,/tmp}/torchvision-mnist', 'train': False, 'download': True, 'transform': {'_target_': 'torchvision.transforms.Compose', 'transforms': [{'_target_': 'torchvision.transforms.ToTensor'}, {'_target_': 'torchvision.transforms.Normalize', 'mean': [0.1307], 'std': [0.3081]}]}}, 'batch_size': 128, 'shuffle': False, 'num_workers': 2, 'pin_memory': True, 'persistent_workers': True}, '_target_': 'src.omnifed.data.DataModule'}, 'ray_actor_options': {'num_cpus': None, 'num_gpus': 0.25, 'resources': None, 'label_selector': None, 'accelerator_type': None, 'memory': None, 'max_restarts': 0, 'max_task_retries': 0, 'namespace': None, 'runtime_env': None, 'scheduling_strategy': None}, 'device_hint': 'auto', 'log_dir_base': '/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml'}
+[Engine->_setup] Calling setup() on 4 Nodes
+[36m(Node pid=1014939)[0m [GrpcCommunicator->__init__] rank=0/4 | addr=127.0.0.1:50051
+[36m(Node pid=1014939)[0m [DataModule->__init__] train=None, eval=<torch.utils.data.dataloader.DataLoader object at 0x7f8e86329840>
+[36m(Node pid=1014941)[0m [GrpcCommunicator->__init__] rank=2/4 | addr=127.0.0.1:50051
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->__init__] world_size=4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_setup] Server listening on port 50051
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->broadcast] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cpu'} | src=0
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->set_broadcast_state]
+[36m(Node0.0 11:24:00 pid=1014939)[0m {
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'type': 'dict',
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'keys': ['backbone.stages.0.0.0.weight', 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'],
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'tensors': 14,
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'total_params': 28714,
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'dtype': 'torch.float32',
+[36m(Node0.0 11:24:00 pid=1014939)[0m     'device': 'cpu'
+[36m(Node0.0 11:24:00 pid=1014939)[0m }
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 'total_params': 2, 
+[36m(Node0.0 11:24:00 pid=1014939)[0m 'dtype': 'torch.int32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=0 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=0
+[36m(Node pid=1014938)[0m [GrpcCommunicator->__init__] rank=1/4 | addr=127.0.0.1:50051
+[36m(Node pid=1014938)[0m [DataModule->__init__] train=<torch.utils.data.dataloader.DataLoader object at 0x7f5277b59ba0>, 
+[36m(Node pid=1014938)[0m eval=<torch.utils.data.dataloader.DataLoader object at 0x7f5277b5a260>
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->__init__] addr=127.0.0.1:50051
+[36m(Node pid=1014937)[0m [GrpcCommunicator->__init__] rank=3/4 | addr=127.0.0.1:50051
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->RegisterClient] 1/4 total
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->_establish_connection] Register | success=True
+[36m(Node pid=1014941)[0m [DataModule->__init__] train=<torch.utils.data.dataloader.DataLoader object at 0x7f3ff6145900>, 
+[36m(Node pid=1014941)[0m eval=<torch.utils.data.dataloader.DataLoader object at 0x7f3ff61462c0>
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->broadcast] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cpu'} | src=0
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_broadcast_state] Waiting for server to broadcast model
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetBroadcastState] request.client_id=1
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_broadcast_state] Retrieving response on the client side; client_id = 1
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_broadcast_state] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 'backbone.stages.0.0.1.weight', 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 'torch.float32', 'device': 'cpu'}
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 'total_params': 2, 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'dtype': 'torch.int32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->__init__] addr=127.0.0.1:50051
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->_establish_connection] Register | success=True
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->broadcast] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cpu'} | src=0
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_broadcast_state] Waiting for server to broadcast model
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_broadcast_state] Retrieving response on the client side; client_id = 2
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_broadcast_state] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 'backbone.stages.0.0.1.weight', 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 'torch.float32', 'device': 'cpu'}
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 'total_params': 2, 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'dtype': 'torch.int32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'total_params': 2, 'dtype': 'torch.int32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->RegisterClient] 2/4 total
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetBroadcastState] request.client_id=2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->RegisterClient] 3/4 total
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetBroadcastState] request.client_id=3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 2 tensors using MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'total_params': 2, 'dtype': 'torch.int32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node pid=1014937)[0m [DataModule->__init__] train=<torch.utils.data.dataloader.DataLoader object at 0x7f4e89660df0>, 
+[36m(Node pid=1014937)[0m eval=<torch.utils.data.dataloader.DataLoader object at 0x7f4e89662320>
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->__init__] addr=127.0.0.1:50051
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->_establish_connection] Register | success=True
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->broadcast] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cpu'} | src=0
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_broadcast_state] Waiting for server to broadcast model
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_broadcast_state] Retrieving response on the client side; client_id = 3
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_broadcast_state] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 'backbone.stages.0.0.1.weight', 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 'torch.float32', 'device': 'cpu'}
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 'total_params': 2, 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'dtype': 'torch.int32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['iters_per_epoch', 'epochs_per_round'], 'tensors': 2, 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'total_params': 2, 'dtype': 'torch.int32', 'device': 'cpu'} (waited 0.0s)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->run_experiment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Engine->run_experiment] Starting Experiment with 4 Nodes
+[Engine->run_experiment] Waiting for 4 nodes to complete experiments...
+[36m(Node0.2 11:24:00 pid=1014941)[0m [Node->run_experiment] Node starting experiment
+[36m(Node0.2 11:24:00 pid=1014941)[0m [__resolve_device] Auto: cuda:0 (rank 2, 1 GPUs)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [Node->run_experiment] Node starting experiment
+[36m(Node0.0 11:24:00 pid=1014939)[0m [__resolve_device] Auto: cuda:0 (rank 0, 1 GPUs)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [Node->run_experiment] Node starting experiment
+[36m(Node0.1 11:24:00 pid=1014938)[0m [__resolve_device] Auto: cuda:0 (rank 1, 1 GPUs)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [Node->run_experiment] Node starting experiment
+[36m(Node0.3 11:24:00 pid=1014937)[0m [__resolve_device] Auto: cuda:0 (rank 3, 1 GPUs)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.0 11:24:00 pid=1014939)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(Node0.0 11:24:00 pid=1014939)[0m I0000 00:00:1772018641.968926 1014939 fork_posix.cc:75] Other threads are currently calling into gRPC, skipping fork() handlers
+[36m(Node0.0 11:24:00 pid=1014939)[0m I0000 00:00:1772018641.979426 1014939 fork_posix.cc:75] Other threads are currently calling into gRPC, skipping fork() handlers
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | eval/loss=2.3047; eval/batch_time_data=0.0001; eval/batch_time_compute=0.0041; eval/batch_time_total=0.0043; eval/epoch_time_total=2.6947; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.2 11:24:00 pid=1014941)[0m group_max_iters_per_epoch=469
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.0 11:24:00 pid=1014939)[0m End eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | eval/loss=2.3047; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0043; eval/batch_time_total=0.0044; eval/epoch_time_total=2.6559; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.0 11:24:00 pid=1014939)[0m group_max_iters_per_epoch=469
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=1 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=1
+[36m(Node0.1 11:24:00 pid=1014938)[0m End eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | eval/loss=2.3047; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0041; eval/batch_time_total=0.0042; eval/epoch_time_total=2.6247; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.1 11:24:00 pid=1014938)[0m group_max_iters_per_epoch=469
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End eval context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | eval/loss=2.3047; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0047; eval/batch_time_total=0.0049; eval/epoch_time_total=3.2351; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.3 11:24:00 pid=1014937)[0m group_max_iters_per_epoch=469
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=0 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 waiting for aggregation to complete
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | duration=15.467s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=15.4672; train/experiment_batch_idx=468.0000; train/experiment_epoch_idx=0.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=16.6667; train/epoch_time_total=15.4689
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | duration=1.029s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0273; train/loss=2.2280; train/grad_norm=0.5664; train/batch_time_compute=0.0034; train/batch_time_total=0.0307; train/epoch_heartbeat_time=1.0293; train/experiment_batch_idx=468.0000; train/experiment_epoch_idx=0.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=16.6667; train/epoch_time_total=15.4598; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=2 | 1/4
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | duration=0.212s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0279; train/loss=2.2278; train/grad_norm=0.5658; train/batch_time_compute=0.0032; train/batch_time_total=0.0311; train/epoch_heartbeat_time=0.2120; train/experiment_batch_idx=468.0000; train/experiment_epoch_idx=0.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=16.6667; train/epoch_time_total=14.8451; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | duration=0.019s
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0276; train/loss=2.2283; train/grad_norm=0.5780; train/batch_time_compute=0.0032; train/batch_time_total=0.0308; train/epoch_heartbeat_time=0.0190; train/experiment_batch_idx=468.0000; train/experiment_epoch_idx=0.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=16.6667; train/epoch_time_total=15.3904; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=468 (ROUND_IDX=0 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | duration=14.633s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=14.6333; train/experiment_batch_idx=937.0000; train/experiment_epoch_idx=1.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=33.3333; train/epoch_time_total=14.6347
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.194s
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0279; train/loss=2.0616; train/grad_norm=0.6108; train/batch_time_compute=0.0028; train/batch_time_total=0.0308; train/epoch_heartbeat_time=0.1945; train/experiment_batch_idx=937.0000; train/experiment_epoch_idx=1.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=33.3333; train/epoch_time_total=14.6313; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.288s
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0276; train/loss=2.0614; train/grad_norm=0.6052; train/batch_time_compute=0.0029; train/batch_time_total=0.0306; train/epoch_heartbeat_time=0.2881; train/experiment_batch_idx=937.0000; train/experiment_epoch_idx=1.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=33.3333; train/epoch_time_total=14.6409; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=3 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.016s
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0281; train/loss=2.0615; train/grad_norm=0.6052; train/batch_time_compute=0.0030; train/batch_time_total=0.0312; train/epoch_heartbeat_time=0.0155; train/experiment_batch_idx=937.0000; train/experiment_epoch_idx=1.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=33.3333; train/epoch_time_total=14.6387; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=937 (ROUND_IDX=0 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 waiting for aggregation to complete
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.079s
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0279; train/loss=1.8508; train/grad_norm=0.6745; train/batch_time_compute=0.0029; train/batch_time_total=0.0308; train/epoch_heartbeat_time=0.0785; train/experiment_batch_idx=1406.0000; train/experiment_epoch_idx=2.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=50.0000; train/epoch_time_total=14.5462; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=14.541s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=14.5411; train/experiment_batch_idx=1406.0000; train/experiment_epoch_idx=2.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=50.0000; train/epoch_time_total=14.5441
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=4 | 4/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.388s
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0272; train/loss=1.8497; train/grad_norm=0.6626; train/batch_time_compute=0.0030; train/batch_time_total=0.0302; train/epoch_heartbeat_time=0.3882; train/experiment_batch_idx=1406.0000; train/experiment_epoch_idx=2.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=50.0000; train/epoch_time_total=14.5438; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.012s
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0279; train/loss=1.8502; train/grad_norm=0.6730; train/batch_time_compute=0.0031; train/batch_time_total=0.0310; train/epoch_heartbeat_time=0.0124; train/experiment_batch_idx=1406.0000; train/experiment_epoch_idx=2.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=50.0000; train/epoch_time_total=14.5446; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.2 11:24:00 pid=1014941)[0m reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.0 11:24:00 pid=1014939)[0m reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=5 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.1 11:24:00 pid=1014938)[0m reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=5
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.3 11:24:00 pid=1014937)[0m reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.066s
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 62db9e66 → 0c5c9b86 | buffers: 07b86761 → 3e7c5e17 | param_norm: 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 13.4957 → 36.6875 (Δ=23.191722) | P:CHG B:CHG
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 14 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.045s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 50154dfc → 0c5c9b86 | buffers: 4041d579 → 38f751fc | param_norm: 
+[36m(Node0.0 11:24:00 pid=1014939)[0m 13.2177 → 36.6875 (Δ=23.469777) | P:CHG B:CHG
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=6 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=6
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.064s
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: e7fbd194 → 0c5c9b86 | buffers: 4cacb8c4 → 3e7c5e17 | param_norm: 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 13.4965 → 36.6875 (Δ=23.190990) | P:CHG B:CHG
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: local_agg_time @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.066s
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 2d4bf599 → 0c5c9b86 | buffers: 7e57355b → 3e7c5e17 | param_norm: 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 13.4961 → 36.6875 (Δ=23.191364) | P:CHG B:CHG
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m End eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=21.0815; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0007; eval/batch_time_total=0.0009; eval/epoch_time_total=2.4126; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.0 11:24:00 pid=1014939)[0m End sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=13.2177; sync/local_agg_time=0.0448; sync/local_agg_param_norm_after=36.6875; sync/local_agg_param_norm_delta=23.4698; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.4957
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.0 11:24:00 pid=1014939)[0m group_max_iters_per_epoch=469
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=7 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=7
+[36m(Node0.1 11:24:00 pid=1014938)[0m End eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=21.0815; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0008; eval/epoch_time_total=2.3880; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m End sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=13.4965; sync/local_agg_time=0.0640; sync/local_agg_param_norm_after=36.6875; sync/local_agg_param_norm_delta=23.1910; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.4746
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.1 11:24:00 pid=1014938)[0m group_max_iters_per_epoch=469
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=21.0815; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0008; eval/epoch_time_total=2.4404; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m End sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=13.4957; sync/local_agg_time=0.0660; sync/local_agg_param_norm_after=36.6875; sync/local_agg_param_norm_delta=23.1917; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.5251
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.2 11:24:00 pid=1014941)[0m group_max_iters_per_epoch=469
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End eval context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=21.0815; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0007; eval/batch_time_total=0.0009; eval/epoch_time_total=2.4655; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m End sync context @ GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=13.4961; sync/local_agg_time=0.0659; sync/local_agg_param_norm_after=36.6875; sync/local_agg_param_norm_delta=23.1914; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.5513
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=1406 (ROUND_IDX=0 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->round_exec] ROUND-START @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0) | group_max_epochs_per_round=3 | 
+[36m(Node0.3 11:24:00 pid=1014937)[0m group_max_iters_per_epoch=469
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=1407 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=0)
+[36m(Node0.1 11:24:00 pid=1014938)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(Node0.1 11:24:00 pid=1014938)[0m I0000 00:00:1772018705.301157 1019591 chttp2_transport.cc:1201] ipv4:127.0.0.1:50051: Got goaway [11] err=UNAVAILABLE:GOAWAY received; Error code: 11; Debug Text: ping_timeout {created_time:"2026-02-25T06:25:05.301124844-05:00", http2_error:11, grpc_status:14}
+[36m(Node0.2 11:24:00 pid=1014941)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(Node0.2 11:24:00 pid=1014941)[0m I0000 00:00:1772018705.323141 1019784 chttp2_transport.cc:1201] ipv4:127.0.0.1:50051: Got goaway [11] err=UNAVAILABLE:GOAWAY received; Error code: 11; Debug Text: ping_timeout {created_time:"2026-02-25T06:25:05.323113873-05:00", http2_error:11, grpc_status:14}
+[36m(Node0.3 11:24:00 pid=1014937)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(Node0.3 11:24:00 pid=1014937)[0m I0000 00:00:1772018705.383150 1019681 chttp2_transport.cc:1201] ipv4:127.0.0.1:50051: Got goaway [11] err=UNAVAILABLE:GOAWAY received; Error code: 11; Debug Text: ping_timeout {created_time:"2026-02-25T06:25:05.383119924-05:00", http2_error:11, grpc_status:14}
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | duration=14.484s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=14.4843; train/experiment_batch_idx=1875.0000; train/experiment_epoch_idx=3.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=66.6667; train/epoch_time_total=14.4860
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | duration=0.144s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=8 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=8
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0273; train/loss=1.9006; train/grad_norm=5.5380; train/batch_time_compute=0.0033; train/batch_time_total=0.0306; train/epoch_heartbeat_time=0.1445; train/experiment_batch_idx=1875.0000; train/experiment_epoch_idx=3.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=66.6667; train/epoch_time_total=14.5116; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | duration=0.035s
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0276; train/loss=1.8987; train/grad_norm=5.4447; train/batch_time_compute=0.0031; train/batch_time_total=0.0307; train/epoch_heartbeat_time=0.0346; train/experiment_batch_idx=1875.0000; train/experiment_epoch_idx=3.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=66.6667; train/epoch_time_total=14.4331; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | duration=0.017s
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468) | train/batch_time_data=0.0278; train/loss=1.9034; train/grad_norm=5.6038; train/batch_time_compute=0.0029; train/batch_time_total=0.0308; train/epoch_heartbeat_time=0.0168; train/experiment_batch_idx=1875.0000; train/experiment_epoch_idx=3.0000; train/round_progress_pct=33.3333; train/experiment_progress_pct=66.6667; train/epoch_time_total=14.4647; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=1875 (ROUND_IDX=1 EPOCH_IDX=0 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 waiting for aggregation to complete
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.017s
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0275; train/loss=1.1927; train/grad_norm=4.5142; train/batch_time_compute=0.0034; train/batch_time_total=0.0309; train/epoch_heartbeat_time=0.0167; train/experiment_batch_idx=2344.0000; train/experiment_epoch_idx=4.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=83.3333; train/epoch_time_total=14.5006; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | duration=14.498s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=14.4975; train/experiment_batch_idx=2344.0000; train/experiment_epoch_idx=4.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=83.3333; train/epoch_time_total=14.4991
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=9 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=9
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.256s
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0275; train/loss=1.1928; train/grad_norm=4.5102; train/batch_time_compute=0.0028; train/batch_time_total=0.0304; train/epoch_heartbeat_time=0.2564; train/experiment_batch_idx=2344.0000; train/experiment_epoch_idx=4.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=83.3333; train/epoch_time_total=14.5020; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | duration=0.082s
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468) | train/batch_time_data=0.0273; train/loss=1.1955; train/grad_norm=4.6890; train/batch_time_compute=0.0034; train/batch_time_total=0.0307; train/epoch_heartbeat_time=0.0821; train/experiment_batch_idx=2344.0000; train/experiment_epoch_idx=4.0000; train/round_progress_pct=66.6667; train/experiment_progress_pct=83.3333; train/epoch_time_total=14.4998; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start train context @ GLOBAL_STEP=2344 (ROUND_IDX=1 EPOCH_IDX=1 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 waiting for aggregation to complete
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.059s
+[36m(Node0.2 11:24:00 pid=1014941)[0m End train context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0278; train/loss=0.9299; train/grad_norm=4.0411; train/batch_time_compute=0.0030; train/batch_time_total=0.0308; train/epoch_heartbeat_time=0.0587; train/experiment_batch_idx=2813.0000; train/experiment_epoch_idx=5.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=100.0000; train/epoch_time_total=14.5143; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.2 11:24:00 pid=1014941)[0m reduction=SUM
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.2 11:24:00 pid=1014941)[0m End timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.034s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 waiting for aggregation to complete
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=14.516s
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Aggregation complete for client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m End train context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_total=0.0000; train/epoch_heartbeat_time=14.5161; train/experiment_batch_idx=2813.0000; train/experiment_epoch_idx=5.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=100.0000; train/epoch_time_total=14.5195
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=10 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=10
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.0000
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.0 11:24:00 pid=1014939)[0m reduction=SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=11 | 1/4
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=11
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 14 tensors using SUM
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.0 11:24:00 pid=1014939)[0m End timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.036s
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.359s
+[36m(Node0.1 11:24:00 pid=1014938)[0m End train context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0271; train/loss=0.9288; train/grad_norm=4.0160; train/batch_time_compute=0.0031; train/batch_time_total=0.0302; train/epoch_heartbeat_time=0.3587; train/experiment_batch_idx=2813.0000; train/experiment_epoch_idx=5.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=100.0000; train/epoch_time_total=14.5171; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.1 11:24:00 pid=1014938)[0m reduction=SUM
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.1 11:24:00 pid=1014938)[0m End timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.037s
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: epoch_heartbeat_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.012s
+[36m(Node0.3 11:24:00 pid=1014937)[0m End train context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | train/batch_time_data=0.0279; train/loss=0.9292; train/grad_norm=3.9666; train/batch_time_compute=0.0030; train/batch_time_total=0.0309; train/epoch_heartbeat_time=0.0120; train/experiment_batch_idx=2813.0000; train/experiment_epoch_idx=5.0000; train/round_progress_pct=100.0000; train/experiment_progress_pct=100.0000; train/epoch_time_total=14.5204; train/epoch_total_samples=60000.0000; train/epoch_total_batches=469.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [1], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [scale_params] scaled 10/10 params, 4/6 buffers | scale_factor=0.3333
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'ComposableModel', 'params': 28522, 'dtype': 'torch.float32', 'device': 'cuda:0'} | 
+[36m(Node0.3 11:24:00 pid=1014937)[0m reduction=SUM
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['backbone.stages.0.0.0.weight', 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'backbone.stages.0.0.1.weight', 'backbone.stages.0.0.1.bias', '...', '(14 total)'], 'tensors': 14, 'total_params': 28714, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->_apply_tensordict_to_msg] Grpc -> apply_tensordict_to_msg: Applying updates to the model of nn.Module
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 2f96e7db → f25b92f9 | buffers: fa509a9b → ff86b83b | param_norm: 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 36.8569 → 101.8931 (Δ=65.036118) | P:CHG B:CHG
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 0c5c9b86 → f25b92f9 | buffers: 38f751fc → 9fcf25f8 | param_norm: 
+[36m(Node0.0 11:24:00 pid=1014939)[0m 36.6875 → 101.8931 (Δ=65.205592) | P:CHG B:CHG
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 2 (1/4 ready)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End timing: local_agg_time @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | duration=0.037s
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (1/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_submit_server_data] Server submit | session=12 | 2/4
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 89e13114 → f25b92f9 | buffers: 446c2822 → ff86b83b | param_norm: 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 36.8571 → 101.8931 (Δ=65.035960) | P:CHG B:CHG
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->track_model_operation] LOCAL_AGG local_model params: 87089db2 → f25b92f9 | buffers: 6480d444 → ff86b83b | param_norm: 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 36.8574 → 101.8931 (Δ=65.035618) | P:CHG B:CHG
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcCommunicator->aggregate] {'type': 'Tensor', 'shape': [], 'numel': 1, 'dtype': 'torch.float32', 'device': 'cpu'} | reduction=MAX
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (2/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcCommunicator->_wait_for_aggregation_result] Server wait | session=12
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 1 (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (3/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->SubmitForAggregation] Received from client 3 (4/4 ready)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Waiting for clients (4/4 ready)
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] All 4 clients ready - beginning aggregation
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->perform_aggregation_if_ready] Aggregated 1 tensors using MAX
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 1 requesting aggregation result
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->submit_for_aggregation] Successfully sent local model to server
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Waiting for server to aggregate models (timeout=60.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 1
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 2 requesting aggregation result
+[36m(Node0.1 11:24:00 pid=1014938)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.1 11:24:00 pid=1014938)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 2
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Client 3 requesting aggregation result
+[36m(Node0.0 11:24:00 pid=1014939)[0m [GrpcServer->GetAggregationResult] Sending aggregated model to client 3
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.2 11:24:00 pid=1014941)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [GrpcClient->get_aggregation_result] Received {'type': 'dict', 'keys': ['tensor'], 'tensors': 1, 'total_params': 1, 'dtype': 
+[36m(Node0.3 11:24:00 pid=1014937)[0m 'torch.float32', 'device': 'cpu'} (waited 0.0s)
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->__post_sync] Starting evaluation epoch
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0001; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0007; eval/epoch_time_total=2.4219; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.0 11:24:00 pid=1014939)[0m End sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=36.6875; sync/local_agg_time=0.0357; sync/local_agg_param_norm_after=101.8931; sync/local_agg_param_norm_delta=65.2056; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.4772
+[36m(Node0.0 11:24:00 pid=1014939)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.0 11:24:00 pid=1014939)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0008; eval/batch_time_total=0.0010; eval/epoch_time_total=2.4957; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m End sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=36.8569; sync/local_agg_time=0.0337; sync/local_agg_param_norm_after=101.8931; sync/local_agg_param_norm_delta=65.0361; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.5551
+[36m(Node0.2 11:24:00 pid=1014941)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0007; eval/batch_time_total=0.0009; eval/epoch_time_total=2.5062; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m End sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=36.8571; sync/local_agg_time=0.0375; sync/local_agg_param_norm_after=101.8931; sync/local_agg_param_norm_delta=65.0360; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.5637
+[36m(Node0.1 11:24:00 pid=1014938)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.1 11:24:00 pid=1014938)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0008; eval/epoch_time_total=2.4599; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m End sync context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | sync/local_agg_param_norm_before=36.8574; sync/local_agg_time=0.0372; sync/local_agg_param_norm_after=101.8931; sync/local_agg_param_norm_delta=65.0356; sync/local_agg_params_changed=1.0000; sync/local_agg_buffers_changed=1.0000; sync/time_total=2.5180
+[36m(Node0.3 11:24:00 pid=1014937)[0m [FedAvg->round_exec] ROUND-END GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.3 11:24:00 pid=1014937)[0m Start eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468)
+[36m(Node0.2 11:24:00 pid=1014941)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0001; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0007; eval/epoch_time_total=2.3971; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.2 11:24:00 pid=1014941)[0m [Node->run_experiment] Node completed experiment
+[36m(Node0.0 11:24:00 pid=1014939)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0007; eval/epoch_time_total=2.3869; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.0 11:24:00 pid=1014939)[0m [Node->run_experiment] Node completed experiment
+[36m(Node0.0 11:24:00 pid=1014939)[0m [Node->run_experiment] Model restored to original device: cpu
+[36m(Node0.2 11:24:00 pid=1014941)[0m [Node->run_experiment] Model restored to original device: cpu
+[Engine->run_experiment] ✔ All 4 nodes completed successfully!
+[Engine->_save_node_results] Saving node results to: 
+/home/ahmadhossein/OmniFed_VT/outputs/2026-02-25/test_fedavg_centralized_grpc.yaml/engine/node_results
+Saving node results:   0%|          | 0/4 [00:00<?, ?file/s]Saving node results: 100%|██████████| 4/4 [00:00<00:00, 17531.05file/s]
+[Engine->_save_node_results] ✔ Saved 4 node result files successfully!
+[Engine->run_experiment] ================================================================================
+[Engine->run_experiment] DEBUG: First node's returned data structure:
+[Engine->run_experiment] ================================================================================
+[Engine->run_experiment] {
+  "eval": [
+    {
+      "global_step": 0,
+      "round_idx": 0,
+      "epoch_idx": 0,
+      "batch_idx": 0,
+      "eval/batch_time_compute": 0.0042619495652616,
+      "eval/batch_time_data": 0.000177120862645,
+      "eval/batch_time_total": 0.0044422876089811,
+      "eval/epoch_time_total": 2.65592622756958,
+      "eval/epoch_total_batches": 79.0,
+      "eval/epoch_total_samples": 10000.0,
+      "eval/loss": 2.3047187328338623
+    },
+    {
+      "global_step": 1406,
+      "round_idx": 0,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "eval/batch_time_compute": 0.0007085076067596,
+      "eval/batch_time_data": 0.0001787535729818,
+      "eval/batch_time_total": 0.0008897720836102,
+      "eval/epoch_time_total": 2.4126439094543457,
+      "eval/epoch_total_batches": 79.0,
+      "eval/epoch_total_samples": 10000.0,
+      "eval/loss": 21.081466674804688
+    },
+    {
+      "global_step": 2813,
+      "round_idx": 1,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "eval/batch_time_compute": 0.0005820702644996,
+      "eval/batch_time_data": 0.0001482541119912,
+      "eval/batch_time_total": 0.000732566753868,
+      "eval/epoch_time_total": 2.421886682510376,
+      "eval/epoch_total_batches": 79.0,
+      "eval/epoch_total_samples": 10000.0,
+      "eval/loss": 1992.97314453125
+    },
+    {
+      "global_step": 2813,
+      "round_idx": 1,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "eval/batch_time_compute": 0.0005747094983235,
+      "eval/batch_time_data": 0.0001549690641695,
+      "eval/batch_time_total": 0.0007319088326767,
+      "eval/epoch_time_total": 2.386852741241455,
+      "eval/epoch_total_batches": 79.0,
+      "eval/epoch_total_samples": 10000.0,
+      "eval/loss": 1992.97314453125
+    }
+  ],
+  "train": [
+    {
+      "global_step": 468,
+      "round_idx": 0,
+      "epoch_idx": 0,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.1890427913385793e-06,
+      "train/epoch_heartbeat_time": 15.467188835144045,
+      "train/epoch_time_total": 15.468877792358398,
+      "train/experiment_batch_idx": 468.0,
+      "train/experiment_epoch_idx": 0.0,
+      "train/experiment_progress_pct": 16.66666603088379,
+      "train/round_progress_pct": 33.33333206176758
+    },
+    {
+      "global_step": 937,
+      "round_idx": 0,
+      "epoch_idx": 1,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.1315986512272502e-06,
+      "train/epoch_heartbeat_time": 14.633331298828123,
+      "train/epoch_time_total": 14.63469409942627,
+      "train/experiment_batch_idx": 937.0,
+      "train/experiment_epoch_idx": 1.0,
+      "train/experiment_progress_pct": 33.33333206176758,
+      "train/round_progress_pct": 66.66666412353516
+    },
+    {
+      "global_step": 1406,
+      "round_idx": 0,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.119906414714933e-06,
+      "train/epoch_heartbeat_time": 14.541082382202148,
+      "train/epoch_time_total": 14.544063568115234,
+      "train/experiment_batch_idx": 1406.0,
+      "train/experiment_epoch_idx": 2.0,
+      "train/experiment_progress_pct": 50.0,
+      "train/round_progress_pct": 100.0
+    },
+    {
+      "global_step": 1875,
+      "round_idx": 1,
+      "epoch_idx": 0,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.1031307849407312e-06,
+      "train/epoch_heartbeat_time": 14.484267234802246,
+      "train/epoch_time_total": 14.485953330993652,
+      "train/experiment_batch_idx": 1875.0,
+      "train/experiment_epoch_idx": 3.0,
+      "train/experiment_progress_pct": 66.66666412353516,
+      "train/round_progress_pct": 33.33333206176758
+    },
+    {
+      "global_step": 2344,
+      "round_idx": 1,
+      "epoch_idx": 1,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.0944886525976472e-06,
+      "train/epoch_heartbeat_time": 14.497526168823242,
+      "train/epoch_time_total": 14.499079704284668,
+      "train/experiment_batch_idx": 2344.0,
+      "train/experiment_epoch_idx": 4.0,
+      "train/experiment_progress_pct": 83.33333587646484,
+      "train/round_progress_pct": 66.66666412353516
+    },
+    {
+      "global_step": 2813,
+      "round_idx": 1,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "train/batch_time_total": 1.0904218470386695e-06,
+      "train/epoch_heartbeat_time": 14.516083717346191,
+      "train/epoch_time_total": 14.519481658935549,
+      "train/experiment_batch_idx": 2813.0,
+      "train/experiment_epoch_idx": 5.0,
+      "train/experiment_progress_pct": 100.0,
+      "train/round_progress_pct": 100.0
+    }
+  ],
+  "sync": [
+    {
+      "global_step": 1406,
+      "round_idx": 0,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "sync/local_agg_buffers_changed": 1.0,
+      "sync/local_agg_param_norm_after": 36.68746566772461,
+      "sync/local_agg_param_norm_before": 13.217689514160156,
+      "sync/local_agg_param_norm_delta": 23.469776153564453,
+      "sync/local_agg_params_changed": 1.0,
+      "sync/local_agg_time": 0.0448353290557861,
+      "sync/time_total": 2.495704412460327
+    },
+    {
+      "global_step": 2813,
+      "round_idx": 1,
+      "epoch_idx": 2,
+      "batch_idx": 468,
+      "sync/local_agg_buffers_changed": 1.0,
+      "sync/local_agg_param_norm_after": 101.89305877685548,
+      "sync/local_agg_param_norm_before": 36.68746566772461,
+      "sync/local_agg_param_norm_delta": 65.2055892944336,
+      "sync/local_agg_params_changed": 1.0,
+      "sync/local_agg_time": 0.0356802940368652,
+      "sync/time_total": 2.4772331714630127
+    }
+  ]
+}
+[Engine->run_experiment] ================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Engine->run_experiment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[36m(Node0.1 11:24:00 pid=1014938)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0001; eval/batch_time_compute=0.0006; eval/batch_time_total=0.0007; eval/epoch_time_total=2.4036; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.1 11:24:00 pid=1014938)[0m [Node->run_experiment] Node completed experiment
+[36m(Node0.1 11:24:00 pid=1014938)[0m [Node->run_experiment] Model restored to original device: cpu
+[36m(Node0.3 11:24:00 pid=1014937)[0m End eval context @ GLOBAL_STEP=2813 (ROUND_IDX=1 EPOCH_IDX=2 BATCH_IDX=468) | eval/loss=1992.9731; eval/batch_time_data=0.0002; eval/batch_time_compute=0.0008; eval/batch_time_total=0.0011; eval/epoch_time_total=2.4490; eval/epoch_total_samples=10000.0000; eval/epoch_total_batches=79.0000
+[36m(Node0.3 11:24:00 pid=1014937)[0m [Node->run_experiment] Node completed experiment
+[36m(Node0.3 11:24:00 pid=1014937)[0m [Node->run_experiment] Model restored to original device: cpu
+Experiment Summary                                     
+╭───────────────────────────────┬─────────────────────╮
+│ 📊 Metric                     │      📋 Value       │
+├───────────────────────────────┼─────────────────────┤
+│ 🔧 Nodes Configured           │          4          │
+│ 🏆 Final Step Reached         │ 🟢 4/4 nodes (100%) │
+│ 📊 Node Participation - Eval  │ 🟢 4/4 nodes (100%) │
+│ 📊 Node Participation - Sync  │ 🟢 4/4 nodes (100%) │
+│ 📊 Node Participation - Train │ 🟢 4/4 nodes (100%) │
+│ 🔄 Total Rounds               │          2          │
+│ ⏲  Duration                   │       98.90s        │
+╰───────────────────────────────┴─────────────────────╯
+
+
+---------------------------------------------- ResultsDisplay->show_experiment_results ----------------------------------------------
+----------------------------------------------------------- Eval Results ------------------------------------------------------------
+
+👥 Eval Metrics - Node Statistics                                                                                                    
+╭───────────┬───────────┬───────────┬───────────┬──────────┬────────┬───────────┬─────────┬──────────┬───────────┬──────────┬───────╮
+│           │    👥     │    ❌     │    🚫     │    🔍    │        │           │         │       📊 │           │          │       │
+│ 📊 Metric │ Coverage  │  Corrupt  │  Invalid  │ Outliers │ ➕ Sum │   📊 Mean │  📏 Std │   Median │    🔻 Min │   🔺 Max │ 📈 CV │
+├───────────┼───────────┼───────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼───────┤
+│ Loss &    │           │           │           │          │        │           │         │          │           │          │       │
+│ Error (1) │           │           │           │          │        │           │         │          │           │          │       │
+│ 📉        │  🟢 4/4   │     -     │     -     │    -     │      - │ 1992.9731 │  0.0000 │ 1992.97… │ 1992.9731 │ 1992.97… │  0.0% │
+│ eval/loss │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+├───────────┼───────────┼───────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼───────┤
+│ Dataset   │           │           │           │          │        │           │         │          │           │          │       │
+│ (2)       │           │           │           │          │        │           │         │          │           │          │       │
+│ 📦        │  🟢 4/4   │     -     │     -     │    -     │    632 │        79 │       0 │        - │        79 │       79 │     - │
+│ eval/epo… │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+│ 📦        │  🟢 4/4   │     -     │     -     │    -     │  80000 │     10000 │       0 │        - │     10000 │    10000 │     - │
+│ eval/epo… │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+├───────────┼───────────┼───────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼───────┤
+│ Timing    │           │           │           │          │        │           │         │          │           │          │       │
+│ (4)       │           │           │           │          │        │           │         │          │           │          │       │
+│  eval/ba… │  🟢 4/4   │     -     │     -     │    -     │      - │   0.0007s │ 0.0001s │        - │   0.0006s │  0.0008s │ 14.6% │
+│           │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+│  eval/ba… │  🟢 4/4   │     -     │     -     │    -     │      - │   0.0002s │ 0.0000s │        - │   0.0001s │  0.0002s │ 13.0% │
+│           │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+│  eval/ba… │  🟢 4/4   │     -     │     -     │    -     │      - │   0.0008s │ 0.0001s │        - │   0.0007s │  0.0011s │ 14.0% │
+│           │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+│  eval/ep… │  🟢 4/4   │     -     │     -     │    -     │      - │   2.4400s │ 0.0423s │        - │   2.3869s │  2.5062s │  1.7% │
+│           │   nodes   │           │           │          │        │           │         │          │           │          │       │
+│           │  (100%)   │           │           │          │        │           │         │          │           │          │       │
+╰───────────┴───────────┴───────────┴───────────┴──────────┴────────┴───────────┴─────────┴──────────┴───────────┴──────────┴───────╯
+                                                                              🟢 4/4 nodes (100%) participated in eval metric context
+                                                                      🟢 4/4 participants (100%) reported all metrics in eval context
+                                                                   🟢 4/4 participants (100%) reached final position R1 E2 B468 S2813
+
+📈 Eval Metrics - Experiment Progression                       
+╭─────────────────────────────┬─────────┬─────────┬───────────╮
+│                             │      R0 │      R0 │        R1 │
+│                             │      E0 │      E2 │        E2 │
+│                             │      B0 │    B468 │      B468 │
+│ 📊 Metric                   │      S0 │   S1406 │     S2813 │
+├─────────────────────────────┼─────────┼─────────┼───────────┤
+│ Loss & Error (1)            │         │         │           │
+│ 📉 eval/loss                │  2.3047 │ 21.0815 │ 1992.9731 │
+│                             │       - │ +814.7% │  +9353.7% │
+├─────────────────────────────┼─────────┼─────────┼───────────┤
+│ Dataset (2)                 │         │         │           │
+│ 📦 eval/epoch_total_batches │      79 │      79 │        79 │
+│                             │       - │   +0.0% │     +0.0% │
+│ 📦 eval/epoch_total_samples │   10000 │   10000 │     10000 │
+│                             │       - │   +0.0% │     +0.0% │
+├─────────────────────────────┼─────────┼─────────┼───────────┤
+│ Timing (4)                  │         │         │           │
+│  eval/batch_time_compute    │ 0.0043s │ 0.0007s │   0.0007s │
+│                             │       - │  -84.3% │     -2.0% │
+│  eval/batch_time_data       │ 0.0002s │ 0.0002s │   0.0002s │
+│                             │       - │   +4.8% │     -6.4% │
+│  eval/batch_time_total      │ 0.0045s │ 0.0008s │   0.0008s │
+│                             │       - │  -80.9% │     -2.9% │
+│  eval/epoch_time_total      │ 2.8026s │ 2.4267s │   2.4400s │
+│                             │       - │  -13.4% │     +0.6% │
+╰─────────────────────────────┴─────────┴─────────┴───────────╯
+               🟢 4/4 nodes (100%) participated in eval context
+
+
+---------------------------------------------- ResultsDisplay->show_experiment_results ----------------------------------------------
+----------------------------------------------------------- Sync Results ------------------------------------------------------------
+
+👥 Sync Metrics - Node Statistics                                                                                                    
+╭───────────┬───────────┬───────────┬───────────┬───────────┬────────┬──────────┬─────────┬───────────┬──────────┬──────────┬───────╮
+│           │    👥     │    ❌     │    🚫     │    🔍     │        │          │         │           │          │          │       │
+│ 📊 Metric │ Coverage  │  Corrupt  │  Invalid  │ Outliers  │ ➕ Sum │  📊 Mean │  📏 Std │ 📊 Median │   🔻 Min │   🔺 Max │ 📈 CV │
+├───────────┼───────────┼───────────┼───────────┼───────────┼────────┼──────────┼─────────┼───────────┼──────────┼──────────┼───────┤
+│ Timing    │           │           │           │           │        │          │         │           │          │          │       │
+│ (2)       │           │           │           │           │        │          │         │           │          │          │       │
+│  sync/lo… │  🟢 4/4   │     -     │     -     │     -     │      - │  0.0360s │ 0.0015s │         - │  0.0337s │  0.0375s │  4.1% │
+│           │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+│  sync/ti… │  🟢 4/4   │     -     │     -     │     -     │      - │  2.5285s │ 0.0342s │         - │  2.4772s │  2.5637s │  1.4% │
+│           │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+├───────────┼───────────┼───────────┼───────────┼───────────┼────────┼──────────┼─────────┼───────────┼──────────┼──────────┼───────┤
+│ Local Agg │           │           │           │           │        │          │         │           │          │          │       │
+│ (5)       │           │           │           │           │        │          │         │           │          │          │       │
+│ ⬆         │  🟢 4/4   │     -     │     -     │     -     │      - │   1.0000 │  0.0000 │         - │   1.0000 │   1.0000 │     - │
+│ sync/loc… │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+│ ⬆         │  🟢 4/4   │     -     │     -     │     -     │      - │ 101.8931 │  0.0000 │         - │ 101.8931 │ 101.8931 │     - │
+│ sync/loc… │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+│ ⬆         │  🟢 4/4   │     -     │     -     │     -     │      - │  36.8147 │  0.0735 │         - │  36.6875 │  36.8574 │     - │
+│ sync/loc… │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+│ ⬆         │  🟢 4/4   │     -     │     -     │     -     │      - │  65.0783 │  0.0735 │         - │  65.0356 │  65.2056 │     - │
+│ sync/loc… │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+│ ⬆         │  🟢 4/4   │     -     │     -     │     -     │      - │   1.0000 │  0.0000 │         - │   1.0000 │   1.0000 │     - │
+│ sync/loc… │   nodes   │           │           │           │        │          │         │           │          │          │       │
+│           │  (100%)   │           │           │           │        │          │         │           │          │          │       │
+╰───────────┴───────────┴───────────┴───────────┴───────────┴────────┴──────────┴─────────┴───────────┴──────────┴──────────┴───────╯
+                                                                              🟢 4/4 nodes (100%) participated in sync metric context
+                                                                      🟢 4/4 participants (100%) reported all metrics in sync context
+                                                                   🟢 4/4 participants (100%) reached final position R1 E2 B468 S2813
+
+📈 Sync Metrics - Experiment Progression                   
+╭────────────────────────────────────┬─────────┬──────────╮
+│                                    │      R0 │       R1 │
+│                                    │      E2 │       E2 │
+│                                    │    B468 │     B468 │
+│ 📊 Metric                          │   S1406 │    S2813 │
+├────────────────────────────────────┼─────────┼──────────┤
+│ Timing (2)                         │         │          │
+│  sync/local_agg_time               │ 0.0602s │  0.0360s │
+│                                    │       - │   -40.2% │
+│  sync/time_total                   │ 2.5117s │  2.5285s │
+│                                    │       - │    +0.7% │
+├────────────────────────────────────┼─────────┼──────────┤
+│ Local Agg (5)                      │         │          │
+│ ⬆ sync/local_agg_buffers_changed   │  1.0000 │   1.0000 │
+│                                    │       - │    +0.0% │
+│ ⬆ sync/local_agg_param_norm_after  │ 36.6875 │ 101.8931 │
+│                                    │       - │  +177.7% │
+│ ⬆ sync/local_agg_param_norm_before │ 13.4265 │  36.8147 │
+│                                    │       - │  +174.2% │
+│ ⬆ sync/local_agg_param_norm_delta  │ 23.2610 │  65.0783 │
+│                                    │       - │  +179.8% │
+│ ⬆ sync/local_agg_params_changed    │  1.0000 │   1.0000 │
+│                                    │       - │    +0.0% │
+╰────────────────────────────────────┴─────────┴──────────╯
+           🟢 4/4 nodes (100%) participated in sync context
+
+
+---------------------------------------------- ResultsDisplay->show_experiment_results ----------------------------------------------
+----------------------------------------------------------- Train Results -----------------------------------------------------------
+
+👥 Train Metrics - Node Statistics                                                                                                   
+╭───────────┬───────────┬──────────┬───────────┬──────────┬────────┬───────────┬─────────┬──────────┬───────────┬──────────┬────────╮
+│           │    👥     │    ❌    │    🚫     │    🔍    │        │           │         │       📊 │           │          │        │
+│ 📊 Metric │ Coverage  │ Corrupt  │  Invalid  │ Outliers │ ➕ Sum │   📊 Mean │  📏 Std │   Median │    🔻 Min │   🔺 Max │  📈 CV │
+├───────────┼───────────┼──────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼────────┤
+│ Progress  │           │          │           │          │        │           │         │          │           │          │        │
+│ (2)       │           │          │           │          │        │           │         │          │           │          │        │
+│ 📈        │  🟢 4/4   │    -     │     -     │    -     │      - │    100.0% │    0.0% │        - │    100.0% │   100.0% │      - │
+│ train/ex… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+│ 📈        │  🟢 4/4   │    -     │     -     │    -     │      - │    100.0% │    0.0% │        - │    100.0% │   100.0% │      - │
+│ train/ro… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+├───────────┼───────────┼──────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼────────┤
+│ Loss &    │           │          │           │          │        │           │         │          │           │          │        │
+│ Error (1) │           │          │           │          │        │           │         │          │           │          │        │
+│ 📉        │  🟠 3/4   │    -     │     -     │    -     │      - │    0.9293 │  0.0004 │   0.9292 │    0.9288 │   0.9299 │   0.0% │
+│ train/lo… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+├───────────┼───────────┼──────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼────────┤
+│ Dataset   │           │          │           │          │        │           │         │          │           │          │        │
+│ (2)       │           │          │           │          │        │           │         │          │           │          │        │
+│ 📦        │  🟠 3/4   │    -     │     -     │    -     │   1407 │       469 │       0 │        - │       469 │      469 │      - │
+│ train/ep… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+│ 📦        │  🟠 3/4   │    -     │     -     │    -     │ 180000 │     60000 │       0 │        - │     60000 │    60000 │      - │
+│ train/ep… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+├───────────┼───────────┼──────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼────────┤
+│ Timing    │           │          │           │          │        │           │         │          │           │          │        │
+│ (5)       │           │          │           │          │        │           │         │          │           │          │        │
+│  train/b… │  🟠 3/4   │    -     │     -     │    -     │      - │   0.0030s │ 0.0000s │        - │   0.0030s │  0.0031s │   0.5% │
+│           │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+│  train/b… │  🟠 3/4   │    -     │     -     │    -     │      - │   0.0276s │ 0.0003s │        - │   0.0271s │  0.0279s │   1.2% │
+│           │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+│  train/b… │  🟢 4/4   │    -     │     -     │    1     │      - │   0.0230s │ 0.0133s │        - │   0.0000s │  0.0309s │  57.7% │
+│           │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+│  train/e… │  🟢 4/4   │    -     │     -     │    2     │      - │   3.7364s │ 6.2251s │        - │   0.0120s │ 14.5161s │ 166.6% │
+│           │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+│  train/e… │  🟢 4/4   │    -     │     -     │    -     │      - │  14.5178s │ 0.0024s │        - │  14.5143s │ 14.5204s │   0.0% │
+│           │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+├───────────┼───────────┼──────────┼───────────┼──────────┼────────┼───────────┼─────────┼──────────┼───────────┼──────────┼────────┤
+│ Other (3) │           │          │           │          │        │           │         │          │           │          │        │
+│ 📊        │  🟢 4/4   │    -     │     -     │    -     │      - │ 2813.0000 │  0.0000 │        - │ 2813.0000 │ 2813.00… │   0.0% │
+│ train/ex… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+│ 📊        │  🟢 4/4   │    -     │     -     │    -     │      - │    5.0000 │  0.0000 │        - │    5.0000 │   5.0000 │   0.0% │
+│ train/ex… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │  (100%)   │          │           │          │        │           │         │          │           │          │        │
+│ 📊        │  🟠 3/4   │    -     │     -     │    -     │      - │    4.0079 │  0.0310 │        - │    3.9666 │   4.0411 │   0.8% │
+│ train/gr… │   nodes   │          │           │          │        │           │         │          │           │          │        │
+│           │   (75%)   │          │           │          │        │           │         │          │           │          │        │
+╰───────────┴───────────┴──────────┴───────────┴──────────┴────────┴───────────┴─────────┴──────────┴───────────┴──────────┴────────╯
+                                                                             🟢 4/4 nodes (100%) participated in train metric context
+                                                                      🟠 3/4 participants (75%) reported all metrics in train context
+                                                                   🟢 4/4 participants (100%) reached final position R1 E2 B468 S2813
+
+📈 Train Metrics - Experiment Progression                                                                 
+╭──────────────────────────────────┬──────────┬──────────┬───────────┬───────────┬───────────┬───────────╮
+│                                  │       R0 │       R0 │        R0 │        R1 │        R1 │        R1 │
+│                                  │       E0 │       E1 │        E2 │        E0 │        E1 │        E2 │
+│                                  │     B468 │     B468 │      B468 │      B468 │      B468 │      B468 │
+│ 📊 Metric                        │     S468 │     S937 │     S1406 │     S1875 │     S2344 │     S2813 │
+├──────────────────────────────────┼──────────┼──────────┼───────────┼───────────┼───────────┼───────────┤
+│ Progress (2)                     │          │          │           │           │           │           │
+│ 📈 train/experiment_progress_pct │    16.7% │    33.3% │     50.0% │     66.7% │     83.3% │    100.0% │
+│                                  │        - │  +100.0% │    +50.0% │    +33.3% │    +25.0% │    +20.0% │
+│ 📈 train/round_progress_pct      │    33.3% │    66.7% │    100.0% │     33.3% │     66.7% │    100.0% │
+│                                  │        - │  +100.0% │    +50.0% │    -66.7% │   +100.0% │    +50.0% │
+├──────────────────────────────────┼──────────┼──────────┼───────────┼───────────┼───────────┼───────────┤
+│ Loss & Error (1)                 │          │          │           │           │           │           │
+│ 📉 train/loss                    │   2.2281 │   2.0615 │    1.8502 │    1.9009 │    1.1937 │    0.9293 │
+│                                  │        - │    -7.5% │    -10.2% │     +2.7% │    -37.2% │    -22.1% │
+├──────────────────────────────────┼──────────┼──────────┼───────────┼───────────┼───────────┼───────────┤
+│ Dataset (2)                      │          │          │           │           │           │           │
+│ 📦 train/epoch_total_batches     │      469 │      469 │       469 │       469 │       469 │       469 │
+│                                  │        - │    +0.0% │     +0.0% │     +0.0% │     +0.0% │     +0.0% │
+│ 📦 train/epoch_total_samples     │    60000 │    60000 │     60000 │     60000 │     60000 │     60000 │
+│                                  │        - │    +0.0% │     +0.0% │     +0.0% │     +0.0% │     +0.0% │
+├──────────────────────────────────┼──────────┼──────────┼───────────┼───────────┼───────────┼───────────┤
+│ Timing (5)                       │          │          │           │           │           │           │
+│  train/batch_time_compute        │  0.0033s │  0.0029s │   0.0030s │   0.0031s │   0.0032s │   0.0030s │
+│                                  │        - │   -10.2% │     +2.1% │     +3.8% │     +2.6% │     -4.7% │
+│  train/batch_time_data           │  0.0276s │  0.0279s │   0.0276s │   0.0276s │   0.0274s │   0.0276s │
+│                                  │        - │    +1.1% │     -0.9% │     -0.3% │     -0.5% │     +0.5% │
+│  train/batch_time_total          │  0.0232s │  0.0231s │   0.0230s │   0.0230s │   0.0230s │   0.0230s │
+│                                  │        - │    -0.1% │     -0.6% │     +0.1% │     -0.2% │     -0.1% │
+│  train/epoch_heartbeat_time      │  4.1819s │  3.7829s │   3.7551s │   3.6700s │   3.7132s │   3.7364s │
+│                                  │        - │    -9.5% │     -0.7% │     -2.3% │     +1.2% │     +0.6% │
+│  train/epoch_time_total          │ 15.2910s │ 14.6364s │  14.5447s │  14.4738s │  14.5004s │  14.5178s │
+│                                  │        - │    -4.3% │     -0.6% │     -0.5% │     +0.2% │     +0.1% │
+├──────────────────────────────────┼──────────┼──────────┼───────────┼───────────┼───────────┼───────────┤
+│ Other (3)                        │          │          │           │           │           │           │
+│ 📊 train/experiment_batch_idx    │ 468.0000 │ 937.0000 │ 1406.0000 │ 1875.0000 │ 2344.0000 │ 2813.0000 │
+│                                  │        - │  +100.2% │    +50.1% │    +33.4% │    +25.0% │    +20.0% │
+│ 📊 train/experiment_epoch_idx    │   0.0000 │   1.0000 │    2.0000 │    3.0000 │    4.0000 │    5.0000 │
+│                                  │        - │        - │   +100.0% │    +50.0% │    +33.3% │    +25.0% │
+│ 📊 train/grad_norm               │   0.5701 │   0.6071 │    0.6700 │    5.5288 │    4.5711 │    4.0079 │
+│                                  │        - │    +6.5% │    +10.4% │   +725.2% │    -17.3% │    -12.3% │
+╰──────────────────────────────────┴──────────┴──────────┴───────────┴───────────┴───────────┴───────────╯
+                                                         🟢 4/4 nodes (100%) participated in train context
+
+[Engine->run_experiment] Shutting down...

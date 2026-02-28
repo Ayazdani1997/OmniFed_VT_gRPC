@@ -31,6 +31,87 @@ def get_class_from_str(path: str):
     return cls
 
 
+def extract_tensordict(msg, aggregation_metric):
+    """
+    Returns dict[str, Tensor] with stable keys.
+    """
+    if isinstance(msg, torch.Tensor):
+        return {"__tensor__": msg}
+
+    elif isinstance(msg, dict):
+        # assume dict[str, Tensor]
+        tensordict = {}
+        # print(msg)
+        for name, param in msg.items():
+            # print(f"name = {name} , param = {param}")
+            if aggregation_metric == "grad":
+                if param.grad is not None:
+                    tensordict[name] = param.grad
+                else:
+                    tensordict[name] = param.data
+            elif aggregation_metric == "param":
+                tensordict[name] = param.data
+            else:
+                raise ValueError(
+                    f"Unsupported aggregation_metric: {aggregation_metric}"
+                )
+        return tensordict
+
+    elif isinstance(msg, nn.Module):
+        # assume dict[str, Tensor]
+        tensordict = {}
+        print(msg)
+        for name, param in msg.named_parameters():
+            # print(f"name = {name} , param = {param}")
+            if aggregation_metric == "grad":
+                if param.grad is not None:
+                    tensordict[name] = param.grad
+            elif aggregation_metric == "param":
+                tensordict[name] = param.data
+            else:
+                raise ValueError(
+                    f"Unsupported aggregation_metric: {aggregation_metric}"
+                )
+        return tensordict
+
+    else:
+        raise TypeError("Unsupported msg type")
+
+
+def compress_message_tensors(msg, compressor, aggregation_metric):
+    """
+    Returns a compressed representation with 1-1 key correspondence.
+    """
+    compressed = {}
+
+    if isinstance(msg, torch.Tensor):
+        return msg
+
+    
+
+    tensordict = extract_tensordict(msg, aggregation_metric)
+
+    with torch.no_grad():
+        for key, tensor in tensordict.items():
+            # print(f"key = {key}")
+            (values, indices), ctx = compressor.compress(
+                tensor=tensor,
+                name=key,
+            )
+
+            # print(f"Inside compressor: key = {key}, values = {values}, value shape = {values.shape}, indices = {indices}, index shape = {indices.shape}")
+            compressed[key] = {
+                "values": values,
+                "indices": indices,
+                "original_shape": tensor.shape,
+                "ctx": ctx,  # (numel, shape)
+            }
+
+    return compressed
+
+
+
+
 def tensordict_to_proto(
     tensordict: Dict[str, torch.Tensor], compression_type=None
 ) -> grpc_pb2.TensorDict:

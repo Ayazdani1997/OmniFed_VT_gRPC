@@ -26,6 +26,8 @@ from . import grpc_pb2, grpc_pb2_grpc
 from .base import AggregationOp
 from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto, proto_to_tensordict_extended
 from .compression.quantization import QSGDQuantCompression
+from .compression.sparsification import TopKCompression
+from .utils import compress_message_tensors, extract_tensordict
 
 
 @rich.repr.auto
@@ -67,6 +69,8 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
                 "reduction_type": None,
             }
         )
+
+        self.compressor = TopKCompression(compress_ratio=0.1)
 
         # Broadcast state storage
         self._broadcast_state = {}
@@ -225,7 +229,13 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
             session_state = self.aggregation_state[session_id]
             if session_state["result"] is not None:
                 aggregated_tensors = session_state["result"]
-                proto_tensordict = tensordict_to_proto(aggregated_tensors)
+                compressed_tensordict = compress_message_tensors(aggregated_tensors, self.compressor, "grad")
+                compressor_name = self.compressor.__class__.__name__
+                if isinstance(aggregated_tensors, torch.Tensor):
+                    compressor_name = None
+                    compressed_tensordict = aggregated_tensors
+                proto_tensordict = tensordict_to_proto(compressed_tensordict, compressor_name)
+                # proto_tensordict = tensordict_to_proto(aggregated_tensors)
                 return grpc_pb2.OperationResponse(
                     tensor_dict=proto_tensordict, is_ready=True
                 )

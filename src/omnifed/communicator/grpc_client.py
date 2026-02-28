@@ -26,90 +26,11 @@ from .utils import get_msg_info, proto_to_tensordict, tensordict_to_proto, proto
 from .compression.sparsification import *
 from .compression.quantization import *
 from .compression.lowrank_approximation import *
+from .utils import compress_message_tensors, extract_tensordict
 
 
 import torch
 import torch.nn as nn
-
-
-def extract_tensordict(msg, aggregation_metric):
-    """
-    Returns dict[str, Tensor] with stable keys.
-    """
-    if isinstance(msg, torch.Tensor):
-        return {"__tensor__": msg}
-
-    elif isinstance(msg, dict):
-        # assume dict[str, Tensor]
-        tensordict = {}
-        # print(msg)
-        for name, param in msg.items():
-            # print(f"name = {name} , param = {param}")
-            if aggregation_metric == "grad":
-                if param.grad is not None:
-                    tensordict[name] = param.grad
-                else:
-                    tensordict[name] = param.data
-            elif aggregation_metric == "param":
-                tensordict[name] = param.data
-            else:
-                raise ValueError(
-                    f"Unsupported aggregation_metric: {aggregation_metric}"
-                )
-        return tensordict
-
-    elif isinstance(msg, nn.Module):
-        # assume dict[str, Tensor]
-        tensordict = {}
-        print(msg)
-        for name, param in msg.named_parameters():
-            # print(f"name = {name} , param = {param}")
-            if aggregation_metric == "grad":
-                if param.grad is not None:
-                    tensordict[name] = param.grad
-            elif aggregation_metric == "param":
-                tensordict[name] = param.data
-            else:
-                raise ValueError(
-                    f"Unsupported aggregation_metric: {aggregation_metric}"
-                )
-        return tensordict
-
-    else:
-        raise TypeError("Unsupported msg type")
-
-
-def compress_message_tensors(msg, compressor, aggregation_metric):
-    """
-    Returns a compressed representation with 1-1 key correspondence.
-    """
-    compressed = {}
-
-    if isinstance(msg, torch.Tensor):
-        return msg
-
-    
-
-    tensordict = extract_tensordict(msg, aggregation_metric)
-
-    with torch.no_grad():
-        for key, tensor in tensordict.items():
-            # print(f"key = {key}")
-            (values, indices), ctx = compressor.compress(
-                tensor=tensor,
-                name=key,
-            )
-
-            # print(f"Inside compressor: key = {key}, values = {values}, value shape = {values.shape}, indices = {indices}, index shape = {indices.shape}")
-            compressed[key] = {
-                "values": values,
-                "indices": indices,
-                "original_shape": tensor.shape,
-                "ctx": ctx,  # (numel, shape)
-            }
-
-    return compressed
-
 
 
 
@@ -160,7 +81,7 @@ class GrpcClient:
         self.retry_delay = retry_delay
         self.max_retries = max_retries
         self.client_timeout = client_timeout
-        self.compressor = TopKCompression()
+        self.compressor = TopKCompression(compress_ratio=0.1)
         self.last_tensordict_submitted = None
 
         # Initialize connection state
@@ -306,7 +227,7 @@ class GrpcClient:
                 request = grpc_pb2.ClientInfo(client_id=self.client_id)
                 response = self.stub.GetAggregationResult(request)
                 if response.is_ready:
-                    tensordict = proto_to_tensordict(response.tensor_dict)
+                    tensordict, is_model_communicated = proto_to_tensordict_extended(response.tensor_dict, self.last_tensordict_submitted)
                     print(
                         f"Received {get_msg_info(tensordict)} (waited {elapsed:.1f}s)"
                     )
