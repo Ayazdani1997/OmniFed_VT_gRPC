@@ -81,7 +81,7 @@ class GrpcClient:
         self.retry_delay = retry_delay
         self.max_retries = max_retries
         self.client_timeout = client_timeout
-        self.compressor = TopKCompression(compress_ratio=0.1)
+        self.compressor = TopKCompression(compress_ratio=0.01)
         self.last_tensordict_submitted = None
 
         # Initialize connection state

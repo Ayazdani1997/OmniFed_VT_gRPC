@@ -70,7 +70,7 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
             }
         )
 
-        self.compressor = TopKCompression(compress_ratio=0.1)
+        self.compressor = TopKCompression(compress_ratio=0.01)
 
         # Broadcast state storage
         self._broadcast_state = {}
