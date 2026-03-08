@@ -76,7 +76,7 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-*_log_*.txt
+*_log*.txt
 
 # Sphinx documentation
 docs/_build/

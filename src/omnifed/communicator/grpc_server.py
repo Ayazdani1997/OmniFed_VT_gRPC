@@ -71,6 +71,8 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
         )
 
         self.compressor = TopKCompression(compress_ratio=0.01)
+        # self.compressor = None
+
 
         # Broadcast state storage
         self._broadcast_state = {}
@@ -230,7 +232,9 @@ class GrpcServer(grpc_pb2_grpc.GrpcServerServicer):
             if session_state["result"] is not None:
                 aggregated_tensors = session_state["result"]
                 compressed_tensordict = compress_message_tensors(aggregated_tensors, self.compressor, "grad")
-                compressor_name = self.compressor.__class__.__name__
+                compressor_name = None
+                if self.compressor:
+                    compressor_name = self.compressor.__class__.__name__
                 if isinstance(aggregated_tensors, torch.Tensor):
                     compressor_name = None
                     compressed_tensordict = aggregated_tensors

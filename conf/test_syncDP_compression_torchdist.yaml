@@ -8,7 +8,7 @@
 defaults:
   - base # Base framework configuration
   - override topology: centralized # see ./conf/topology/centralized.yaml
-  - override algorithm: fedavg # see ./conf/algorithm/fedavg.yaml
+  - override algorithm: synchronousDP # see ./conf/algorithm/fedavg.yaml
   - override model: simple_cnn # see ./conf/model/simple_cnn.yaml
   - override datamodule: mnist # see ./conf/datamodule/mnist.yaml
   - _self_ # Everything below is merged on top of the above defaults

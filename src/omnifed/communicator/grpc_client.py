@@ -82,6 +82,7 @@ class GrpcClient:
         self.max_retries = max_retries
         self.client_timeout = client_timeout
         self.compressor = TopKCompression(compress_ratio=0.01)
+        # self.compressor = None
         self.last_tensordict_submitted = None
 
         # Initialize connection state
@@ -179,7 +180,9 @@ class GrpcClient:
         try:
             # print(f"Dict to submit; type = {type(tensordict)}")
             compressed_tensordict = compress_message_tensors(tensordict, self.compressor, "grad")
-            compressor_name = self.compressor.__class__.__name__
+            compressor_name = None
+            if self.compressor:
+                compressor_name = self.compressor.__class__.__name__
             if isinstance(tensordict, torch.Tensor):
                 compressor_name = None
                 compressed_tensordict = tensordict

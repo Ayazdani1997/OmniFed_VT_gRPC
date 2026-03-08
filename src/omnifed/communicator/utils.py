@@ -84,6 +84,9 @@ def compress_message_tensors(msg, compressor, aggregation_metric):
     """
     compressed = {}
 
+    if compressor is None:
+        return msg
+
     if isinstance(msg, torch.Tensor):
         return msg
 
@@ -381,7 +384,7 @@ def proto_to_tensordict_extended(
                 )
 
             numpy_array = np.frombuffer(entry.data, dtype=numpy_dtype)
-            print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
+            # print(f"No compression; numpy_array.shape = {numpy_array.shape}, entry.shape = {entry.shape}")
             numpy_array = numpy_array.reshape(tuple(entry.shape))
 
         else:
