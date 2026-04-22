@@ -18,12 +18,12 @@ import rich.repr
 import torch
 from torch import nn
 
-from .bsp import BSPAlgorithm
+from .base import BaseAlgorithm
 
 # ======================================================================================
 
 @rich.repr.auto
-class SynchronousDP(BSPAlgorithm):
+class SynchronousDP(BaseAlgorithm):
     """
     Fully Synchronous Data-Parallel training where model is aggregated at every iteration.
     """
